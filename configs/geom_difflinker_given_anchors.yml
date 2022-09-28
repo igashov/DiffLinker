@@ -1,0 +1,37 @@
+exp_name: 'geom_difflinker_given_anchors'
+data: datasets
+train_data_prefix: geom_multifrag_train
+val_data_prefix: geom_multifrag_val
+checkpoints: models
+logs: logs
+device: gpu
+log_iterations: null
+wandb_entity: null
+enable_progress_bar: False
+
+model: egnn_dynamics
+lr: 2.0e-4
+batch_size: 128
+n_layers: 6
+n_epochs: 1500
+test_epochs: 20
+n_stability_samples: 10
+nf: 128
+activation: silu
+attention: False
+condition_time: True
+tanh: False
+norm_constant: 0.000001
+inv_sublayers: 2
+include_charges: False
+diffusion_loss_type: l2
+data_augmentation: False
+center_of_mass: anchors
+
+sin_embedding: False
+normalization_factor: 100
+normalize_factors: [1, 4, 10]
+aggregation_method: 'sum'
+normalization: batch_norm
+
+resume:
