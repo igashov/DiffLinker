@@ -13,6 +13,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--samples', action='store', type=str, required=True)
 parser.add_argument('--checkpoint', action='store', type=str, required=True)
 parser.add_argument('--dataset', action='store', type=str, required=True)
+parser.add_argument('--true_smiles_path', action='store', type=str, required=True)
 parser.add_argument('--formatted', action='store', type=str, required=True)
 parser.add_argument('--linker_size_model_name', action='store', type=str, required=False, default=None)
 
@@ -93,8 +94,8 @@ def load_sampled_dataset(folder, idx2true_mol_smi, idx2true_frag_smi):
     return pred_mols, pred_mols_smi, pred_link_smi, true_mols_smi, true_frags_smi
 
 
-def reformat(samples, dataset, checkpoint, formatted, linker_size_model_name):
-    true_smiles_path = os.path.join(formatted, dataset.split('.')[0], 'smiles.smi')
+def reformat(samples, dataset, true_smiles_path, checkpoint, formatted, linker_size_model_name):
+    true_smiles_path = os.path.join(true_smiles_path)
     if linker_size_model_name is None:
         input_path = os.path.join(samples, dataset, checkpoint)
         formatted_output_dir = os.path.join(formatted, checkpoint)
@@ -141,6 +142,7 @@ if __name__ == '__main__':
     reformat(
         samples=args.samples,
         dataset=args.dataset,
+        true_smiles_path=args.true_smiles_path,
         checkpoint=args.checkpoint,
         formatted=args.formatted,
         linker_size_model_name=args.linker_size_model_name,

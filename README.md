@@ -157,7 +157,7 @@ python -W ignore sample.py \
                  --samples samples \
                  --data datasets \
                  --prefix zinc_final_test \
-                 --n_samples 250 \
+                 --n_samples 2 \
                  --device cuda:0
 ```
 You will be able to see `.xyz` files of the generated molecules in the directory `./samples`.
@@ -176,22 +176,35 @@ You will be able to see trajectories as `.xyz`, `.png` and `.gif` files in the d
 
 ### Evaluation
 
-First, you need to run OpenBabel to reformat the data:
+First, you need to download ground-truth SMILES and SDF files of molecules, 
+fragments and linkers from the relevant test sets (recomputed with OpenBabel) + SMILES of the training linkers.
+Check [this resource](https://doi.org/10.5281/zenodo.7121448) for finding the right ones.
+Here, we will download files for ZINC:
+```shell
+mkdir -p datasets
+wget https://zenodo.org/record/7121448/files/zinc_final_test_smiles.smi?download=1 -O datasets/zinc_final_test_smiles.smi
+wget https://zenodo.org/record/7121448/files/zinc_final_test_molecules.sdf?download=1 -O datasets/zinc_final_test_molecules.sdf
+wget https://zenodo.org/record/7121448/files/zinc_final_train_linkers.smi?download=1 -O datasets/zinc_final_train_linkers.smi 
+```
+
+Next, you need to run OpenBabel to reformat the data:
 ```shell
 mkdir -p formatted
 python -W ignore reformat_data_obabel.py \
                  --samples samples \
                  --dataset zinc_final_test \
+                 --true_smiles_path datasets/zinc_final_test_smiles.smi \
                  --checkpoint zinc_difflinker \
-                 --formatted formatted
+                 --formatted formatted \
+                 --linker_size_model_name zinc_size_gnn
 ```
 
 Then you can run evaluation scripts:
 ```shell
 python -W ignore compute_metrics.py \
                  ZINC \
-                 formatted/zinc_difflinker/zinc_final_test.smi \
-                 $TRAIN_LINKERS \
+                 formatted/zinc_difflinker/sampled_size/zinc_size_gnn/zinc_final_test.smi \
+                 datasets/zinc_final_train_linkers.smi \
                  5 1 None \
                  resources/wehi_pains.csv \
                  diffusion

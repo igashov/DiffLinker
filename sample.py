@@ -74,7 +74,7 @@ model = DDPM.load_from_checkpoint(args.checkpoint, map_location=args.device)
 # Possibility to evaluate on different datasets (e.g., on CASF instead of ZINC)
 model.val_data_prefix = args.prefix
 
-# In case Hannes will run my model or vice versa
+# In case <Anonymous> will run my model or vice versa
 if args.data is not None:
     model.data_path = args.data
 

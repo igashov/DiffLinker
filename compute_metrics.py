@@ -317,12 +317,8 @@ if method == 'diffusion' and data_set == 'ZINC':
     # Use SMILES of test set generated for molecules processed by OpenBabel
     # (for consistency with other evaluation metrics)
     # Because SMILES produced by our model are also based on OpenBabel
-    true_smi_path = (
-        '/home/igashov/work/diffusion_linker_data/e3_ddpm_linker_design/formatted/zinc_final_test/smiles.smi'
-    )
-    true_mol_path = (
-        '/home/igashov/work/diffusion_linker_data/e3_ddpm_linker_design/formatted/zinc_final_test/molecules.sdf'
-    )
+    true_smi_path = 'datasets/zinc_final_test_smiles.smi'
+    true_mol_path = 'datasets/zinc_final_test_molecules.sdf'
     true_smi = pd.read_csv(true_smi_path, sep=' ', names=['mol', 'frag']).mol.values
     true_mol_3d = Chem.SDMolSupplier(true_mol_path)
     true_smi2mol3d = dict(zip(true_smi, true_mol_3d))
@@ -330,12 +326,8 @@ elif method == 'diffusion' and data_set == 'CASF':
     # Use SMILES of test set generated for molecules processed by OpenBabel
     # (for consistency with other evaluation metrics)
     # Because SMILES produced by our model are also based on OpenBabel
-    true_smi_path = (
-        '/home/igashov/work/diffusion_linker_data/e3_ddpm_linker_design/formatted/casf_final_test/smiles.smi'
-    )
-    true_mol_path = (
-        '/home/igashov/work/diffusion_linker_data/e3_ddpm_linker_design/formatted/casf_final_test/molecules.sdf'
-    )
+    true_smi_path = 'datasets/casf_final_test_smiles.smi'
+    true_mol_path = 'datasets/casf_final_test_molecules.sdf'
     true_smi = pd.read_csv(true_smi_path, sep=' ', names=['mol', 'frag']).mol.values
     true_mol_3d = Chem.SDMolSupplier(true_mol_path)
     true_smi2mol3d = dict(zip(true_smi, true_mol_3d))
@@ -343,12 +335,8 @@ elif method == 'diffusion' and data_set == 'GEOM':
     # Use SMILES of test set generated for molecules processed by OpenBabel
     # (for consistency with other evaluation metrics)
     # Because SMILES produced by our model are also based on OpenBabel
-    true_smi_path = (
-        '/home/igashov/work/diffusion_linker_data/e3_ddpm_linker_design/formatted/geom_multifrag_test/smiles.smi'
-    )
-    true_mol_path = (
-        '/home/igashov/work/diffusion_linker_data/e3_ddpm_linker_design/formatted/geom_multifrag_test/molecules.sdf'
-    )
+    true_smi_path = 'datasets/geom_multifrag_test_smiles.smi'
+    true_mol_path = 'datasets/geom_multifrag_test_molecules.sdf'
     true_smi = pd.read_csv(true_smi_path, sep=' ', names=['mol', 'frag']).mol.values
     true_mol_3d = Chem.SDMolSupplier(true_mol_path)
     true_smi2mol3d = dict(zip(true_smi, true_mol_3d))
@@ -356,43 +344,11 @@ elif method == 'diffusion' and data_set == 'MOAD':
     # Use SMILES of test set generated for molecules processed by OpenBabel
     # (for consistency with other evaluation metrics)
     # Because SMILES produced by our model are also based on OpenBabel
-    true_smi_path = (
-        '/home/igashov/work/diffusion_linker_data/e3_ddpm_linker_design/formatted/MOAD_test/smiles.smi'
-    )
-    true_mol_path = (
-        '/home/igashov/work/diffusion_linker_data/e3_ddpm_linker_design/formatted/MOAD_test/molecules.sdf'
-    )
+    true_smi_path = 'datasets/MOAD_test_smiles.smi'
+    true_mol_path = 'datasets/MOAD_test_molecules.sdf'
     true_smi = pd.read_csv(true_smi_path, sep=' ', names=['mol', 'frag']).mol.values
     true_mol_3d = Chem.SDMolSupplier(true_mol_path)
     true_smi2mol3d = dict(zip(true_smi, true_mol_3d))
-elif method == '3dlinker' and data_set == 'ZINC':
-    true_mol_path = (
-        '/home/igashov/work/diffusion_linker_data/e3_ddpm_linker_design/generated_conformers/'
-        'zinc_final_test_3DLINKER.sdf'
-    )
-    true_mol_3d = Chem.SDMolSupplier(true_mol_path)
-    true_smi2mol3d = {}
-    for mol in true_mol_3d:
-        smi = mol.GetProp('_Name')
-        true_smi2mol3d[smi] = mol
-elif method == 'delinker' and data_set == 'ZINC':
-    true_mol_path = (
-        '/home/igashov/work/diffusion_linker_data/e3_ddpm_linker_design/generated_conformers/zinc_final_test.sdf'
-    )
-    true_mol_3d = Chem.SDMolSupplier(true_mol_path)
-    true_smi2mol3d = {}
-    for mol in true_mol_3d:
-        smi = mol.GetProp('_Name')
-        true_smi2mol3d[smi] = mol
-elif method == 'delinker' and data_set == 'CASF':
-    true_mol_path = (
-        '/home/igashov/work/diffusion_linker_data/e3_ddpm_linker_design/generated_conformers/casf_structures_test.sdf'
-    )
-    true_mol_3d = Chem.SDMolSupplier(true_mol_path)
-    true_smi2mol3d = {}
-    for mol in true_mol_3d:
-        smi = mol.GetProp('_Name')
-        true_smi2mol3d[smi] = mol
 else:
     raise NotImplementedError
 
