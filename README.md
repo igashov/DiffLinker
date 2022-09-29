@@ -209,3 +209,4 @@ python -W ignore compute_metrics.py \
                  resources/wehi_pains.csv \
                  diffusion
 ```
+All the metrics will be saved in the directory `./formatted`.
