@@ -1,5 +1,6 @@
 # DiffLinker: Equivariant 3D-Conditional Diffusion Model for Molecular Linker Design
 
+<img src="resources/overview.png">
 
 ## Environment Setup
 
