@@ -8,9 +8,9 @@
 <br>
 
 <p float="left">
-  <img src="resources/example_1.gif" width="33%" />
-  <img src="resources/example_2.gif" width="33%" />
-  <img src="resources/example_3.gif" width="33%" />
+  <img src="resources/example_1.gif" width="30%" />
+  <img src="resources/example_2.gif" width="30%" />
+  <img src="resources/example_3.gif" width="30%" />
 </p>
 
 </details>
