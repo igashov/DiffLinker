@@ -2,6 +2,19 @@
 
 <img src="resources/overview.png">
 
+
+<details>
+<summary>Animations</summary>
+<br>
+
+<p float="left">
+  <img src="resources/example_1.gif" width="33%" />
+  <img src="resources/example_2.gif" width="33%" />
+  <img src="resources/example_3.gif" width="33%" />
+</p>
+
+</details>
+
 ## Environment Setup
 
 The code was tested in the following environment:
