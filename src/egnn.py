@@ -110,8 +110,8 @@ class EquivariantUpdate(nn.Module):
         agg = unsorted_segment_sum(trans, row, num_segments=coord.size(0),
                                    normalization_factor=self.normalization_factor,
                                    aggregation_method=self.aggregation_method)
-        # if linker_mask is not None:
-        #     agg = agg * linker_mask
+        if linker_mask is not None:
+            agg = agg * linker_mask
 
         coord = coord + agg
         return coord
