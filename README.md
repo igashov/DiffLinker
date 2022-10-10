@@ -74,7 +74,7 @@ Please find the models [here](https://doi.org/10.5281/zenodo.7121300) or use dir
 
 ## Usage
 
-In this example, we will consider training and testing process on ZINC dataset. 
+In this example, we will consider the training and testing process on the ZINC dataset. 
 All the instructions about downloading or creating datasets from scratch can be found in `./data`. 
 
 ### Training DiffLinker
