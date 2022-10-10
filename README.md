@@ -32,7 +32,7 @@ You can create a new conda environment using provided `environment.yaml` file:
 conda env create -f environment.yml
 ```
 
-Or manually creating the base environment:
+or manually creating the base environment:
 ```shell
 conda create -c conda-forge -n difflinker rdkit
 ```
@@ -48,6 +48,11 @@ scipy
 scikit-learn
 tqdm
 wandb
+```
+
+Activate the environment:
+```shell
+conda activate difflinker
 ```
 
 ## Models
@@ -69,7 +74,8 @@ Please find the models [here](https://doi.org/10.5281/zenodo.7121300) or use dir
 
 ## Usage
 
-In this tutorial, we will consider training and testing process on ZINC dataset.
+In this example, we will consider training and testing process on ZINC dataset. 
+All the instructions about downloading or creating datasets from scratch can be found in `./data`. 
 
 ### Training DiffLinker
 
