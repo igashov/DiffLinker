@@ -8,9 +8,15 @@
 <br>
 
 <p float="left">
-  <img src="resources/example_1.gif" width="30%" />
-  <img src="resources/example_2.gif" width="30%" />
-  <img src="resources/example_3.gif" width="30%" />
+  <img src="resources/animations/example_1.gif" width="30%" />
+  <img src="resources/animations/example_2.gif" width="30%" />
+  <img src="resources/animations/example_3.gif" width="30%" />
+</p>
+
+<p float="left">
+  <img src="resources/animations/example_4.gif" width="30%" />
+  <img src="resources/animations/example_5.gif" width="30%" />
+  <img src="resources/animations/example_6.gif" width="30%" />
 </p>
 
 </details>
@@ -58,24 +64,20 @@ conda activate difflinker
 ## Models
 
 Please find the models [here](https://doi.org/10.5281/zenodo.7121300) or use direct download links:
-
-| Model                            | Download Link                                                                            |
-|----------------------------------|------------------------------------------------------------------------------------------|
-| ZINC DiffLinker                  | https://zenodo.org/record/7121300/files/zinc_difflinker.ckpt?download=1                  |
-| ZINC DiffLinker (given anchors)  | https://zenodo.org/record/7121300/files/zinc_difflinker_given_anchors.ckpt?download=1    |
-| ZINC Size GNN                    | https://zenodo.org/record/7121300/files/zinc_size_gnn.ckpt?download=1                    |
-| GEOM DiffLinker                  | https://zenodo.org/record/7121300/files/geom_difflinker.ckpt?download=1                  |
-| GEOM DiffLinker (given anchors)  | https://zenodo.org/record/7121300/files/geom_difflinker_given_anchors.ckpt?download=1    |
-| GEOM Size GNN                    | https://zenodo.org/record/7121300/files/geom_size_gnn.ckpt?download=1                    |
-| GEOM DiffLinker (full pocket)    | https://zenodo.org/record/7121300/files/pockets_difflinker_full.ckpt?download=1          |
-| GEOM DiffLinker (backbone atoms) | https://zenodo.org/record/7121300/files/pockets_difflinker_backbone.ckpt?download=1      |
-| GEOM DiffLinker (unconditioned)  | https://zenodo.org/record/7121300/files/pockets_difflinker_unconditioned.ckpt?download=1 |
-
+* [[ZINC] DiffLinker](https://zenodo.org/record/7121300/files/zinc_difflinker.ckpt?download=1)                 
+* [[ZINC] DiffLinker (given anchors)](https://zenodo.org/record/7121300/files/zinc_difflinker_given_anchors.ckpt?download=1)   
+* [[ZINC] Size GNN](https://zenodo.org/record/7121300/files/zinc_size_gnn.ckpt?download=1)                   
+* [[GEOM] DiffLinker](https://zenodo.org/record/7121300/files/geom_difflinker.ckpt?download=1)                 
+* [[GEOM] DiffLinker (given anchors)](https://zenodo.org/record/7121300/files/geom_difflinker_given_anchors.ckpt?download=1)   
+* [[GEOM] Size GNN](https://zenodo.org/record/7121300/files/geom_size_gnn.ckpt?download=1)                   
+* [[Pockets] DiffLinker (full pocket)](https://zenodo.org/record/7121300/files/pockets_difflinker_full.ckpt?download=1)         
+* [[Pockets] DiffLinker (backbone atoms)](https://zenodo.org/record/7121300/files/pockets_difflinker_backbone.ckpt?download=1)     
+* [[Pockets] DiffLinker (unconditioned)](https://zenodo.org/record/7121300/files/pockets_difflinker_unconditioned.ckpt?download=1)
 
 ## Usage
 
 In this example, we will consider training and testing process on ZINC dataset. 
-All the instructions about downloading or creating datasets from scratch can be found in `./data`. 
+All the instructions about downloading or creating datasets from scratch can be found in `data` directory. 
 
 ### Training DiffLinker
 
