@@ -1,5 +1,11 @@
 # DiffLinker: Equivariant 3D-Conditional Diffusion Model for Molecular Linker Design
 
+The official implementation of DiffLinker, an [Equivariant 3D-conditional Diffusion Model for Molecular Linker Design](https://arxiv.org/abs/2210.05274) by Ilia Igashov, Hannes Stärk, Clément Vignac, Victor Garcia Satorras, Pascal Frossard, Max Welling, Michael Bronstein and Bruno Correia.
+
+
+Given a set of disconnected fragments in 3D, DiffLinker places missing atoms in between and designs a molecule incorporating all the initial fragments. 
+Our method can link an arbitrary number of fragments, requires no information on the attachment atoms and linker size, and can be conditioned on the protein pockets.
+
 <img src="resources/overview.png">
 
 
@@ -202,3 +208,9 @@ python -W ignore compute_metrics.py \
                  diffusion
 ```
 All the metrics will be saved in the directory `./formatted`.
+
+# Contact
+
+If you have any questions, please contact me at ilia.igashov@epfl.ch
+
+
