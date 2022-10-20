@@ -102,7 +102,12 @@ class ZincDataset(Dataset):
 
 class MOADDataset(Dataset):
     def __init__(self, data_path, prefix, device):
-        prefix, pocket_mode = prefix.split('.')
+        if '.' in prefix:
+            prefix, pocket_mode = prefix.split('.')
+        else:
+            parts = prefix.split('_')
+            prefix = '_'.join(parts[:-1])
+            pocket_mode = parts[-1]
 
         dataset_path = os.path.join(data_path, f'{prefix}_{pocket_mode}.pt')
         if os.path.exists(dataset_path):

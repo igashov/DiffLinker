@@ -7,7 +7,7 @@ from src import utils
 from src.lightning import DDPM
 from src.linker_size_lightning import SizeClassifier
 from src.visualizer import save_xyz_file
-from src.datasets import collate, collate_with_fragment_edges
+from src.datasets import collate, collate_with_fragment_edges, MOADDataset
 from tqdm import tqdm
 
 from pdb import set_trace
@@ -117,7 +117,7 @@ for batch_idx, data in enumerate(dataloader):
     utils.assert_partial_mean_zero_with_mask(x, node_mask, center_of_mass_mask)
 
     # Saving pocket if applicable
-    if '.' in model.val_data_prefix:
+    if isinstance(model.val_dataset, MOADDataset):
         node_mask = data['atom_mask'] - data['pocket_mask']
         frag_mask = data['fragment_only_mask']
         pock_mask = data['pocket_mask']
@@ -135,7 +135,7 @@ for batch_idx, data in enumerate(dataloader):
         x = chain[0][:, :, :model.n_dims]
         h = chain[0][:, :, model.n_dims:]
 
-        if '.' in model.val_data_prefix:
+        if isinstance(model.val_dataset, MOADDataset):
             node_mask = node_mask - data['pocket_mask']
 
         pred_names = [f'{uuid}/{i}' for uuid in uuids]
