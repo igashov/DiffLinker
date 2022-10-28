@@ -82,8 +82,24 @@ Please find the models [here](https://doi.org/10.5281/zenodo.7121300) or use dir
 
 ## Usage
 
-In this example, we will consider the training and testing process on the ZINC dataset. 
-All the instructions about downloading or creating datasets from scratch can be found in `data` directory. 
+### Generating linkers for your own fragments
+
+First, download necessary models and create directories (we recommend to use GEOM models as they are the most generic):
+```shell
+mkdir -p models
+wget https://zenodo.org/record/7121300/files/geom_difflinker.ckpt?download=1 -O models/geom_difflinker.ckpt
+wget https://zenodo.org/record/7121300/files/geom_size_gnn.ckpt?download=1 -O models/geom_size_gnn.ckpt
+```
+
+Generate linkers for your own fragments:
+```shell
+python generate.py --fragments <YOUR_PATH> --model models/geom_difflinker.ckpt --linker_size models/geom_size_gnn.ckpt
+```
+
+For more options check help:
+```shell
+python generate.py --help
+```
 
 ### Training DiffLinker
 
@@ -106,6 +122,9 @@ python -W ignore train_difflinker.py --config configs/zinc_difflinker.yml
 ```
 
 ### Training Size GNN
+
+In this example, we will consider the training and testing process on the ZINC dataset. 
+All the instructions about downloading or creating datasets from scratch can be found in `data` directory.
 
 ```shell
 python -W ignore train_size_gnn.py \

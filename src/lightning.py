@@ -21,7 +21,6 @@ from pdb import set_trace
 
 
 def get_activation(activation):
-    print(activation)
     if activation == 'silu':
         return torch.nn.SiLU()
     else:

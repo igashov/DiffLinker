@@ -38,14 +38,14 @@ class SizeClassifier(pl.LightningModule):
         self.linker_id2size = linker_id2size
         self.batch_size = batch_size
         self.lr = lr
-        self.torch_device = torch_device
-        self.loss_weights = None if loss_weights is None else torch.tensor(loss_weights, device=torch_device)
+        self.torch_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.loss_weights = None if loss_weights is None else torch.tensor(loss_weights, device=self.torch_device)
         self.gnn = SizeGNN(
             in_node_nf=in_node_nf,
             hidden_nf=hidden_nf,
             out_node_nf=out_node_nf,
             n_layers=n_layers,
-            device=torch_device,
+            device=self.torch_device,
             normalization=normalization,
         )
 
@@ -79,7 +79,7 @@ class SizeClassifier(pl.LightningModule):
     def test_dataloader(self):
         return get_dataloader(self.test_dataset, self.batch_size, collate_fn=collate_with_fragment_edges)
 
-    def forward(self, data):
+    def forward(self, data, return_loss=True):
         h = data['one_hot']
         x = data['positions']
         fragment_mask = data['fragment_mask']
@@ -103,8 +103,11 @@ class SizeClassifier(pl.LightningModule):
         output = self.gnn.forward(h, edges, distances, fragment_mask, distance_edge_mask)
         output = output.view(bs, n_nodes, -1).mean(1)
 
-        true = self.get_true_labels(linker_mask)
-        loss = cross_entropy(output, true, weight=self.loss_weights)
+        if return_loss:
+            true = self.get_true_labels(linker_mask)
+            loss = cross_entropy(output, true, weight=self.loss_weights)
+        else:
+            loss = None
 
         return output, loss
 
