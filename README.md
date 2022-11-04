@@ -84,6 +84,8 @@ Please find the models [here](https://doi.org/10.5281/zenodo.7121300) or use dir
 
 ### Generating linkers for your own fragments
 
+#### 1. Without protein pocket
+
 First, download necessary models and create directories (we recommend to use GEOM models as they are the most generic):
 ```shell
 mkdir -p models
@@ -93,13 +95,32 @@ wget https://zenodo.org/record/7121300/files/geom_size_gnn.ckpt?download=1 -O mo
 
 Generate linkers for your own fragments:
 ```shell
-python generate.py --fragments <YOUR_PATH> --model models/geom_difflinker.ckpt --linker_size models/geom_size_gnn.ckpt
+python -W ignore  generate.py --fragments <YOUR_PATH> --model models/geom_difflinker.ckpt --linker_size models/geom_size_gnn.ckpt
 ```
 
-For more options check help:
+#### 2. With protein pocket (full atomic representation)
+
 ```shell
-python generate.py --help
+mkdir -p models
+wget https://zenodo.org/record/7121300/files/pockets_difflinker_full.ckpt?download=1 -O models/pockets_difflinker_full.ckpt
+python -W ignore generate_with_pocket.py --fragments <FRAGMENTS_PATH> --pocket <POCKETS_PATH> --model models/pockets_difflinker_full.ckpt --linker_size <DESIRED_LINKER_SIZE> --anchors <COMMA_SEPARATED_ANCHOR_INDICES> 
 ```
+
+#### 3. With protein pocket (backbone representation)
+
+```shell
+mkdir -p models
+wget https://zenodo.org/record/7121300/files/pockets_difflinker_backbone.ckpt?download=1 -O models/pockets_difflinker_backbone.ckpt
+python -W ignore generate_with_pocket.py --fragments <FRAGMENTS_PATH> --pocket <POCKETS_PATH> --backbone_atoms_only --model models/pockets_difflinker_backbone.ckpt --linker_size <DESIRED_LINKER_SIZE> --anchors <COMMA_SEPARATED_ANCHOR_INDICES>
+```
+
+#### Note:
+- Fragment file should be passed in one of the following formats: `.sdf`, `.pdb`, `.mol`, `.mol2`
+- Protein pocket should be passed in `.pdb` format
+- Currently pocket-conditioned generation does not support prediction and sampling of the linker size (will be added later)
+- Provided pocket-conditioned models were trained with given anchor atoms so if you want to use them for your fragments you need to provide anchor atom ids
+- To obtain correct anchor indices for your fragments, you can open the file in PyMOL and click `Label -> atom identifiers -> ID`. You can select anchor atoms and pass the corresponding IDs to the generation script
+- For more options check help: `python generate.py --help` or `python generate_with_pocket.py --help`
 
 ### Training DiffLinker
 

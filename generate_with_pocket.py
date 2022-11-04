@@ -5,13 +5,16 @@ import numpy as np
 import torch
 import subprocess
 from rdkit import Chem
+from Bio.PDB import PDBParser
 
 from src import const
-from src.datasets import collate_with_fragment_edges, get_dataloader, parse_molecule
+from src.datasets import collate_with_fragment_edges, get_dataloader, get_one_hot, parse_molecule
 from src.lightning import DDPM
-from src.linker_size_lightning import SizeClassifier
 from src.visualizer import save_xyz_file
 from tqdm import tqdm
+
+
+from pdb import set_trace
 
 
 parser = argparse.ArgumentParser()
@@ -20,12 +23,20 @@ parser.add_argument(
     help='Path to the file with input fragments'
 )
 parser.add_argument(
+    '--pocket', action='store', type=str, required=True,
+    help='Path to the file with pocket atoms'
+)
+parser.add_argument(
+    '--backbone_atoms_only', action='store_true', required=False, default=False,
+    help='Flag if to use only protein backbone atoms'
+)
+parser.add_argument(
     '--model', action='store', type=str, required=True,
     help='Path to the DiffLinker model'
 )
 parser.add_argument(
-    '--linker_size', action='store', type=str, required=True,
-    help='Either linker size (int) or path to the GNN for size prediction'
+    '--linker_size', action='store', type=int, required=True,
+    help='Either linker size (int)'
 )
 parser.add_argument(
     '--output', action='store', type=str, required=False, default='./',
@@ -58,33 +69,48 @@ def read_molecule(path):
     raise Exception('Unknown file extension')
 
 
-def main(input_path, model, output_dir, n_samples, n_steps, linker_size, anchors):
+def read_pocket(path):
+    pocket_coords_full = []
+    pocket_types_full = []
+
+    pocket_coords_bb = []
+    pocket_types_bb = []
+
+    struct = PDBParser().get_structure('', path)
+    for residue in struct.get_residues():
+        for atom in residue.get_atoms():
+            atom_name = atom.get_name()
+            atom_type = atom.element.upper()
+            atom_coord = atom.get_coord()
+
+            pocket_coords_full.append(atom_coord.tolist())
+            pocket_types_full.append(atom_type)
+
+            if atom_name == 'H':
+                continue
+
+            if atom_name in {'N', 'CA', 'C', 'O'}:
+                pocket_coords_bb.append(atom_coord.tolist())
+                pocket_types_bb.append(atom_type)
+
+    return {
+        'full_coord': np.array(pocket_coords_full),
+        'full_types': np.array(pocket_types_full),
+        'bb_coord': np.array(pocket_coords_bb),
+        'bb_types': np.array(pocket_types_bb),
+    }
+
+
+def main(input_path, pocket_path, backbone_atoms_only, model, output_dir, n_samples, n_steps, linker_size, anchors):
 
     # Setup
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     os.makedirs(output_dir, exist_ok=True)
 
-    if linker_size.isdigit():
-        print(f'Will generate linkers with {linker_size} atoms')
-        linker_size = int(linker_size)
+    def sample_fn(_data):
+        return torch.ones(_data['positions'].shape[0], device=device, dtype=const.TORCH_INT) * linker_size
 
-        def sample_fn(_data):
-            return torch.ones(_data['positions'].shape[0], device=device, dtype=const.TORCH_INT) * linker_size
-    else:
-        print(f'Will generate linkers with sampled numbers of atoms')
-        size_nn = SizeClassifier.load_from_checkpoint(linker_size, map_location=device).eval().to(device)
-
-        def sample_fn(_data):
-            out, _ = size_nn.forward(_data, return_loss=False)
-            probabilities = torch.softmax(out, dim=1)
-            distribution = torch.distributions.Categorical(probs=probabilities)
-            samples = distribution.sample()
-            sizes = []
-            for label in samples.detach().cpu().numpy():
-                sizes.append(size_nn.linker_id2size[label])
-            sizes = torch.tensor(sizes, device=samples.device, dtype=const.TORCH_INT)
-            return sizes
-
+    print(f'Will generate linkers with {linker_size} atoms')
     ddpm = DDPM.load_from_checkpoint(model, map_location=device).eval().to(device)
 
     if n_steps is not None:
@@ -100,7 +126,12 @@ def main(input_path, model, output_dir, n_samples, n_steps, linker_size, anchors
     # Reading input fragments
     extension = input_path.split('.')[-1]
     if extension not in ['sdf', 'pdb', 'mol', 'mol2']:
-        print('Please upload the file in one of the following formats: .pdb, .sdf, .mol, .mol2')
+        print('Please upload the fragments file in one of the following formats: .pdb, .sdf, .mol, .mol2')
+        return
+
+    pocket_extension = pocket_path.split('.')[-1]
+    if pocket_extension != 'pdb':
+        print('Please upload the pocket file in .pdb format')
         return
 
     try:
@@ -108,15 +139,51 @@ def main(input_path, model, output_dir, n_samples, n_steps, linker_size, anchors
         molecule = Chem.RemoveAllHs(molecule)
         name = '.'.join(input_path.split('/')[-1].split('.')[:-1])
     except Exception as e:
-        return f'Could not read the molecule: {e}'
+        return f'Could not read the file with fragments: {e}'
 
-    positions, one_hot, charges = parse_molecule(molecule, is_geom=ddpm.is_geom)
-    fragment_mask = np.ones_like(charges)
-    linker_mask = np.zeros_like(charges)
+    try:
+        pocket_data = read_pocket(pocket_path)
+    except Exception as e:
+        return f'Could not read the file with pocket: {e}'
+
+    # Parsing fragments data
+    frag_pos, frag_one_hot, frag_charges = parse_molecule(molecule, is_geom=ddpm.is_geom)
+
+    # Parsing pocket data
+    pocket_mode = 'bb' if backbone_atoms_only else 'full'
+    pocket_pos = pocket_data[f'{pocket_mode}_coord']
+    pocket_one_hot = []
+    pocket_charges = []
+    for atom_type in pocket_data[f'{pocket_mode}_types']:
+        pocket_one_hot.append(get_one_hot(atom_type, const.GEOM_ATOM2IDX))
+        pocket_charges.append(const.GEOM_CHARGES[atom_type])
+    pocket_one_hot = np.array(pocket_one_hot)
+    pocket_charges = np.array(pocket_charges)
+
+    positions = np.concatenate([frag_pos, pocket_pos], axis=0)
+    one_hot = np.concatenate([frag_one_hot, pocket_one_hot], axis=0)
+    charges = np.concatenate([frag_charges, pocket_charges], axis=0)
     anchor_flags = np.zeros_like(charges)
     if anchors is not None:
         for anchor in anchors.split(','):
             anchor_flags[int(anchor) - 1] = 1
+
+    fragment_only_mask = np.concatenate([
+        np.ones_like(frag_charges),
+        np.zeros_like(pocket_charges),
+    ])
+    pocket_mask = np.concatenate([
+        np.zeros_like(frag_charges),
+        np.ones_like(pocket_charges),
+    ])
+    linker_mask = np.concatenate([
+        np.zeros_like(frag_charges),
+        np.zeros_like(pocket_charges),
+    ])
+    fragment_mask = np.concatenate([
+        np.ones_like(frag_charges),
+        np.ones_like(pocket_charges),
+    ])
 
     dataset = [{
         'uuid': '0',
@@ -125,10 +192,13 @@ def main(input_path, model, output_dir, n_samples, n_steps, linker_size, anchors
         'one_hot': torch.tensor(one_hot, dtype=const.TORCH_FLOAT, device=device),
         'charges': torch.tensor(charges, dtype=const.TORCH_FLOAT, device=device),
         'anchors': torch.tensor(anchor_flags, dtype=const.TORCH_FLOAT, device=device),
+        'fragment_only_mask': torch.tensor(fragment_only_mask, dtype=const.TORCH_FLOAT, device=device),
+        'pocket_mask': torch.tensor(pocket_mask, dtype=const.TORCH_FLOAT, device=device),
         'fragment_mask': torch.tensor(fragment_mask, dtype=const.TORCH_FLOAT, device=device),
         'linker_mask': torch.tensor(linker_mask, dtype=const.TORCH_FLOAT, device=device),
         'num_atoms': len(positions),
     }] * n_samples
+
     batch_size = min(n_samples, 64)
     dataloader = get_dataloader(dataset, batch_size=batch_size, collate_fn=collate_with_fragment_edges)
 
@@ -148,6 +218,8 @@ def main(input_path, model, output_dir, n_samples, n_steps, linker_size, anchors
 
         offset_idx = batch_i * batch_size
         names = [f'output_{offset_idx+i}_{name}' for i in range(batch_size)]
+
+        node_mask[torch.where(data['pocket_mask'])] = 0
         save_xyz_file(output_dir, h, x, node_mask, names=names, is_geom=ddpm.is_geom, suffix='')
 
         for i in range(batch_size):
@@ -162,6 +234,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     main(
         input_path=args.fragments,
+        pocket_path=args.pocket,
+        backbone_atoms_only=args.backbone_atoms_only,
         model=args.model,
         output_dir=args.output,
         n_samples=args.n_samples,

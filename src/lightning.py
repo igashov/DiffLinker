@@ -424,7 +424,7 @@ class DDPM(pl.LightningModule):
         # Add information about pocket to the context
         if '.' in self.train_data_prefix:
             fragment_pocket_mask = fragment_mask
-            fragment_only_mask = data['fragment_only_mask']
+            fragment_only_mask = template_data['fragment_only_mask']
             pocket_only_mask = fragment_pocket_mask - fragment_only_mask
             if self.anchors_context:
                 context = torch.cat([anchors, fragment_only_mask, pocket_only_mask], dim=-1)
