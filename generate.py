@@ -123,7 +123,7 @@ def main(input_path, model, output_dir, n_samples, n_steps, linker_size):
 
     # Sampling
     print('Sampling...')
-    for data in tqdm(dataloader):
+    for batch_i, data in tqdm(enumerate(dataloader), total=len(dataloader)):
         chain, node_mask = ddpm.sample_chain(data, sample_fn=sample_fn, keep_frames=1)
         x = chain[0][:, :, :ddpm.n_dims]
         h = chain[0][:, :, ddpm.n_dims:]
@@ -134,16 +134,14 @@ def main(input_path, model, output_dir, n_samples, n_steps, linker_size):
         mean = torch.sum(pos_masked, dim=1, keepdim=True) / N
         x = x + mean * node_mask
 
-        names = [f'output_{i+1}_{name}' for i in range(n_samples)]
+        offset_idx = batch_i * batch_size
+        names = [f'output_{offset_idx+i}_{name}' for i in range(batch_size)]
         save_xyz_file(output_dir, h, x, node_mask, names=names, is_geom=ddpm.is_geom, suffix='')
 
-    print('Computing bonds...')
-    out_files = []
-    for i in tqdm(range(n_samples)):
-        out_xyz = f'{output_dir}/output_{i+1}_{name}_.xyz'
-        out_sdf = f'{output_dir}/output_{i+1}_{name}_.sdf'
-        subprocess.run(f'obabel {out_xyz} -O {out_sdf} 2> /dev/null', shell=True)
-        out_files.append(out_sdf)
+        for i in range(batch_size):
+            out_xyz = f'{output_dir}/output_{offset_idx+i}_{name}_.xyz'
+            out_sdf = f'{output_dir}/output_{offset_idx+i}_{name}_.sdf'
+            subprocess.run(f'obabel {out_xyz} -O {out_sdf} 2> /dev/null', shell=True)
 
     print(f'Saved generated molecules in .xyz and .sdf format in directory {output_dir}')
 

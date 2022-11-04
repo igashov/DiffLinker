@@ -223,10 +223,10 @@ def collate(batch):
     out = {}
 
     # Filter out big molecules
-    if 'pocket_mask' not in batch[0].keys():
-        batch = [data for data in batch if data['num_atoms'] <= 50]
-    else:
-        batch = [data for data in batch if data['num_atoms'] <= 1000]
+    # if 'pocket_mask' not in batch[0].keys():
+    #    batch = [data for data in batch if data['num_atoms'] <= 50]
+    # else:
+    #    batch = [data for data in batch if data['num_atoms'] <= 1000]
 
     for i, data in enumerate(batch):
         for key, value in data.items():
@@ -269,7 +269,7 @@ def collate_with_fragment_edges(batch):
     out = {}
 
     # Filter out big molecules
-    batch = [data for data in batch if data['num_atoms'] <= 50]
+    # batch = [data for data in batch if data['num_atoms'] <= 50]
 
     for i, data in enumerate(batch):
         for key, value in data.items():
