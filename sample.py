@@ -107,6 +107,8 @@ for batch_idx, data in enumerate(dataloader):
     h, x, node_mask, frag_mask = data['one_hot'], data['positions'], data['atom_mask'], data['fragment_mask']
     if model.inpainting:
         center_of_mass_mask = node_mask
+    if isinstance(model.val_dataset, MOADDataset) and model.center_of_mass == 'fragments':
+        center_of_mass_mask = data['fragment_only_mask']
     elif model.center_of_mass == 'fragments':
         center_of_mass_mask = data['fragment_mask']
     elif model.center_of_mass == 'anchors':

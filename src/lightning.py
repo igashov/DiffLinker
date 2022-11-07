@@ -157,7 +157,7 @@ class DDPM(pl.LightningModule):
             context = fragment_mask
 
         # Add information about pocket to the context
-        if '.' in self.train_data_prefix:
+        if isinstance(self.train_dataset, MOADDataset):
             fragment_pocket_mask = fragment_mask
             fragment_only_mask = data['fragment_only_mask']
             pocket_only_mask = fragment_pocket_mask - fragment_only_mask
@@ -169,6 +169,8 @@ class DDPM(pl.LightningModule):
         # Removing COM of fragment from the atom coordinates
         if self.inpainting:
             center_of_mass_mask = node_mask
+        elif isinstance(self.train_dataset, MOADDataset) and self.center_of_mass == 'fragments':
+            center_of_mass_mask = data['fragment_only_mask']
         elif self.center_of_mass == 'fragments':
             center_of_mass_mask = fragment_mask
         elif self.center_of_mass == 'anchors':
@@ -434,6 +436,8 @@ class DDPM(pl.LightningModule):
         # Removing COM of fragment from the atom coordinates
         if self.inpainting:
             center_of_mass_mask = node_mask
+        elif isinstance(self.val_dataset, MOADDataset) and self.center_of_mass == 'fragments':
+            center_of_mass_mask = template_data['fragment_only_mask']
         elif self.center_of_mass == 'fragments':
             center_of_mass_mask = fragment_mask
         elif self.center_of_mass == 'anchors':
