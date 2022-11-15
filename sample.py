@@ -18,6 +18,7 @@ parser.add_argument('--samples', action='store', type=str, required=True)
 parser.add_argument('--data', action='store', type=str, required=False, default=None)
 parser.add_argument('--prefix', action='store', type=str, required=True)
 parser.add_argument('--n_samples', action='store', type=int, required=True)
+parser.add_argument('--n_steps', action='store', type=int, required=False, default=None)
 parser.add_argument('--linker_size_model', action='store', type=str, required=False, default=None)
 parser.add_argument('--device', action='store', type=str, required=True)
 args = parser.parse_args()
@@ -34,6 +35,8 @@ os.makedirs(output_dir, exist_ok=True)
 
 
 def check_if_generated(_output_dir, _uuids, n_samples):
+    generated = True
+    starting_points = []
     for _uuid in _uuids:
         uuid_dir = os.path.join(_output_dir, _uuid)
         numbers = []
@@ -44,9 +47,18 @@ def check_if_generated(_output_dir, _uuids, n_samples):
             except:
                 continue
         if len(numbers) == 0 or max(numbers) != n_samples - 1:
-            return False
+            generated = False
+            if len(numbers) == 0:
+                starting_points.append(0)
+            else:
+                starting_points.append(max(numbers) - 1)
 
-    return True
+    if len(starting_points) > 0:
+        starting = min(starting_points)
+    else:
+        starting = None
+
+    return generated, starting
 
 
 collate_fn = collate
@@ -78,6 +90,10 @@ model.val_data_prefix = args.prefix
 if args.data is not None:
     model.data_path = args.data
 
+# Less sampling steps
+if args.n_steps is not None:
+    model.edm.T = args.n_steps
+
 # Setting up the model
 model = model.eval().to(args.device)
 model.setup(stage='val')
@@ -99,9 +115,12 @@ for batch_idx, data in enumerate(dataloader):
         pock_names.append(f'{uuid}/pock')
         os.makedirs(os.path.join(output_dir, uuid), exist_ok=True)
 
-    if check_if_generated(output_dir, uuids, args.n_samples):
+    generated, starting_point = check_if_generated(output_dir, uuids, args.n_samples)
+    if generated:
         print(f'Already generated batch={batch_idx}, max_uuid={max(uuids)}')
         continue
+    if starting_point > 0:
+        print(f'Generating {args.n_samples - starting_point} for batch={batch_idx}')
 
     # Removing COM of fragment from the atom coordinates
     h, x, node_mask, frag_mask = data['one_hot'], data['positions'], data['atom_mask'], data['fragment_mask']
@@ -132,7 +151,7 @@ for batch_idx, data in enumerate(dataloader):
     save_xyz_file(output_dir, h, x, frag_mask, frag_names, is_geom=model.is_geom)
 
     # Sampling and saving generated molecules
-    for i in tqdm(range(args.n_samples), desc=str(batch_idx)):
+    for i in tqdm(range(starting_point, args.n_samples), desc=str(batch_idx)):
         chain, node_mask = model.sample_chain(data, sample_fn=sample_fn, keep_frames=1)
         x = chain[0][:, :, :model.n_dims]
         h = chain[0][:, :, model.n_dims:]
