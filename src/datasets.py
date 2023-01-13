@@ -114,7 +114,7 @@ class MOADDataset(Dataset):
             self.data = torch.load(dataset_path, map_location=device)
         else:
             print(f'Preprocessing dataset with prefix {prefix}')
-            self.data = MOADDataset.preprocess(data_path, prefix, pocket_mode, device)
+            self.data = self.preprocess(data_path, prefix, pocket_mode, device)
             torch.save(self.data, dataset_path)
 
     def __len__(self):
@@ -217,6 +217,111 @@ class MOADDataset(Dataset):
 
         curr_rows, curr_cols = np.where(full_adj)
         return [curr_rows, curr_cols]
+
+
+class OptimisedMOADDataset(MOADDataset):
+    def __len__(self):
+        return len(self.data['fragmentation_level_data'])
+
+    def __getitem__(self, item):
+        fragmentation_level_data = self.data['fragmentation_level_data'][item]
+        protein_level_data = self.data['protein_level_data'][fragmentation_level_data['name']]
+        return {
+            **fragmentation_level_data,
+            **protein_level_data,
+        }
+
+    @staticmethod
+    def preprocess(data_path, prefix, pocket_mode, device):
+        print('Preprocessing optimised version of the dataset')
+        protein_level_data = {}
+        fragmentation_level_data = []
+
+        table_path = os.path.join(data_path, f'{prefix}_table.csv')
+        fragments_path = os.path.join(data_path, f'{prefix}_frag.sdf')
+        linkers_path = os.path.join(data_path, f'{prefix}_link.sdf')
+        pockets_path = os.path.join(data_path, f'{prefix}_pockets.pkl')
+
+        is_geom = True
+        is_multifrag = 'multifrag' in prefix
+
+        with open(pockets_path, 'rb') as f:
+            pockets = pickle.load(f)
+
+        table = pd.read_csv(table_path)
+        generator = tqdm(
+            zip(table.iterrows(), read_sdf(fragments_path), read_sdf(linkers_path), pockets),
+            total=len(table)
+        )
+        for (_, row), fragments, linker, pocket_data in generator:
+            uuid = row['uuid']
+            name = row['molecule']
+            frag_pos, frag_one_hot, frag_charges = parse_molecule(fragments, is_geom=is_geom)
+            link_pos, link_one_hot, link_charges = parse_molecule(linker, is_geom=is_geom)
+
+            # Parsing pocket data
+            pocket_pos = pocket_data[f'{pocket_mode}_coord']
+            pocket_one_hot = []
+            pocket_charges = []
+            for atom_type in pocket_data[f'{pocket_mode}_types']:
+                pocket_one_hot.append(get_one_hot(atom_type, const.GEOM_ATOM2IDX))
+                pocket_charges.append(const.GEOM_CHARGES[atom_type])
+            pocket_one_hot = np.array(pocket_one_hot)
+            pocket_charges = np.array(pocket_charges)
+
+            positions = np.concatenate([frag_pos, pocket_pos, link_pos], axis=0)
+            one_hot = np.concatenate([frag_one_hot, pocket_one_hot, link_one_hot], axis=0)
+            charges = np.concatenate([frag_charges, pocket_charges, link_charges], axis=0)
+            anchors = np.zeros_like(charges)
+
+            if is_multifrag:
+                for anchor_idx in map(int, row['anchors'].split('-')):
+                    anchors[anchor_idx] = 1
+            else:
+                anchors[row['anchor_1']] = 1
+                anchors[row['anchor_2']] = 1
+
+            fragment_only_mask = np.concatenate([
+                np.ones_like(frag_charges),
+                np.zeros_like(pocket_charges),
+                np.zeros_like(link_charges)
+            ])
+            pocket_mask = np.concatenate([
+                np.zeros_like(frag_charges),
+                np.ones_like(pocket_charges),
+                np.zeros_like(link_charges)
+            ])
+            linker_mask = np.concatenate([
+                np.zeros_like(frag_charges),
+                np.zeros_like(pocket_charges),
+                np.ones_like(link_charges)
+            ])
+            fragment_mask = np.concatenate([
+                np.ones_like(frag_charges),
+                np.ones_like(pocket_charges),
+                np.zeros_like(link_charges)
+            ])
+
+            fragmentation_level_data.append({
+                'uuid': uuid,
+                'name': name,
+                'anchors': torch.tensor(anchors, dtype=const.TORCH_FLOAT, device=device),
+                'fragment_only_mask': torch.tensor(fragment_only_mask, dtype=const.TORCH_FLOAT, device=device),
+                'pocket_mask': torch.tensor(pocket_mask, dtype=const.TORCH_FLOAT, device=device),
+                'fragment_mask': torch.tensor(fragment_mask, dtype=const.TORCH_FLOAT, device=device),
+                'linker_mask': torch.tensor(linker_mask, dtype=const.TORCH_FLOAT, device=device),
+            })
+            protein_level_data[name] = {
+                'positions': torch.tensor(positions, dtype=const.TORCH_FLOAT, device=device),
+                'one_hot': torch.tensor(one_hot, dtype=const.TORCH_FLOAT, device=device),
+                'charges': torch.tensor(charges, dtype=const.TORCH_FLOAT, device=device),
+                'num_atoms': len(positions),
+            }
+
+        return {
+            'fragmentation_level_data': fragmentation_level_data,
+            'protein_level_data': protein_level_data,
+        }
 
 
 def collate(batch):
