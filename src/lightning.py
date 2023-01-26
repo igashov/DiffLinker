@@ -9,7 +9,7 @@ from src.const import LINKER_SIZE_DIST
 from src.egnn import Dynamics, DynamicsWithPockets
 from src.edm import EDM, InpaintingEDM
 from src.datasets import (
-    ZincDataset, MOADDataset, OptimisedMOADDataset, create_templates_for_linker_generation, get_dataloader, collate
+    ZincDataset, MOADDataset, create_templates_for_linker_generation, get_dataloader, collate
 )
 from src.linker_size import DistributionNodes
 from src.molecule_builder import build_molecules
@@ -109,7 +109,7 @@ class DDPM(pl.LightningModule):
         self.linker_size_sampler = DistributionNodes(LINKER_SIZE_DIST)
 
     def setup(self, stage: Optional[str] = None):
-        dataset_type = OptimisedMOADDataset if '.' in self.train_data_prefix else ZincDataset
+        dataset_type = MOADDataset if '.' in self.train_data_prefix else ZincDataset
         if stage == 'fit':
             self.is_geom = ('geom' in self.train_data_prefix) or ('MOAD' in self.train_data_prefix)
             self.train_dataset = dataset_type(

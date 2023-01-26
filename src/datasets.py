@@ -220,6 +220,8 @@ class MOADDataset(Dataset):
 
 
 class OptimisedMOADDataset(MOADDataset):
+    # TODO: finish testing
+
     def __len__(self):
         return len(self.data['fragmentation_level_data'])
 
