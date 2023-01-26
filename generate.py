@@ -10,6 +10,7 @@ from src import const
 from src.datasets import collate_with_fragment_edges, get_dataloader, parse_molecule
 from src.lightning import DDPM
 from src.linker_size_lightning import SizeClassifier
+from src.utils import FoundNaNException
 from src.visualizer import save_xyz_file
 from tqdm import tqdm
 
@@ -129,13 +130,24 @@ def main(input_path, model, output_dir, n_samples, n_steps, linker_size, anchors
         'linker_mask': torch.tensor(linker_mask, dtype=const.TORCH_FLOAT, device=device),
         'num_atoms': len(positions),
     }] * n_samples
-    batch_size = min(n_samples, 64)
-    dataloader = get_dataloader(dataset, batch_size=batch_size, collate_fn=collate_with_fragment_edges)
+    global_batch_size = min(n_samples, 64)
+    dataloader = get_dataloader(dataset, batch_size=global_batch_size, collate_fn=collate_with_fragment_edges)
 
     # Sampling
     print('Sampling...')
     for batch_i, data in tqdm(enumerate(dataloader), total=len(dataloader)):
-        chain, node_mask = ddpm.sample_chain(data, sample_fn=sample_fn, keep_frames=1)
+        batch_size = len(data['positions'])
+
+        chain = None
+        for i in range(5):
+            try:
+                chain, node_mask = ddpm.sample_chain(data, sample_fn=sample_fn, keep_frames=1)
+                break
+            except FoundNaNException:
+                continue
+        if chain is None:
+            raise Exception('Could not generate in 5 attempts')
+
         x = chain[0][:, :, :ddpm.n_dims]
         h = chain[0][:, :, ddpm.n_dims:]
 
@@ -146,7 +158,7 @@ def main(input_path, model, output_dir, n_samples, n_steps, linker_size, anchors
         mean = torch.sum(pos_masked, dim=1, keepdim=True) / N
         x = x + mean * node_mask
 
-        offset_idx = batch_i * batch_size
+        offset_idx = batch_i * global_batch_size
         names = [f'output_{offset_idx+i}_{name}' for i in range(batch_size)]
         save_xyz_file(output_dir, h, x, node_mask, names=names, is_geom=ddpm.is_geom, suffix='')
 
