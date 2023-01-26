@@ -11,7 +11,10 @@ from src import const
 from src.datasets import collate_with_fragment_edges, get_dataloader, get_one_hot, parse_molecule
 from src.lightning import DDPM
 from src.visualizer import save_xyz_file
+from src.utils import FoundNaNException
 from tqdm import tqdm
+
+from src.linker_size_lightning import SizeClassifier
 
 
 from pdb import set_trace
@@ -35,7 +38,7 @@ parser.add_argument(
     help='Path to the DiffLinker model'
 )
 parser.add_argument(
-    '--linker_size', action='store', type=int, required=True,
+    '--linker_size', action='store', type=str, required=True,
     help='Either linker size (int)'
 )
 parser.add_argument(
@@ -107,10 +110,28 @@ def main(input_path, pocket_path, backbone_atoms_only, model, output_dir, n_samp
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     os.makedirs(output_dir, exist_ok=True)
 
-    def sample_fn(_data):
-        return torch.ones(_data['positions'].shape[0], device=device, dtype=const.TORCH_INT) * linker_size
+    if linker_size.isdigit():
+        print(f'Will generate linkers with {linker_size} atoms')
+        linker_size = int(linker_size)
 
-    print(f'Will generate linkers with {linker_size} atoms')
+        def sample_fn(_data):
+            return torch.ones(_data['positions'].shape[0], device=device, dtype=const.TORCH_INT) * linker_size
+
+    else:
+        print(f'Will generate linkers with sampled numbers of atoms')
+        size_nn = SizeClassifier.load_from_checkpoint(linker_size, map_location=device).eval().to(device)
+
+        def sample_fn(_data):
+            out, _ = size_nn.forward(_data, return_loss=False)
+            probabilities = torch.softmax(out, dim=1)
+            distribution = torch.distributions.Categorical(probs=probabilities)
+            samples = distribution.sample()
+            sizes = []
+            for label in samples.detach().cpu().numpy():
+                sizes.append(size_nn.linker_id2size[label])
+            sizes = torch.tensor(sizes, device=samples.device, dtype=const.TORCH_INT)
+            return sizes
+
     ddpm = DDPM.load_from_checkpoint(model, map_location=device).eval().to(device)
 
     if n_steps is not None:
@@ -199,13 +220,24 @@ def main(input_path, pocket_path, backbone_atoms_only, model, output_dir, n_samp
         'num_atoms': len(positions),
     }] * n_samples
 
-    batch_size = min(n_samples, 64)
-    dataloader = get_dataloader(dataset, batch_size=batch_size, collate_fn=collate_with_fragment_edges)
+    global_batch_size = min(n_samples, 64)
+    dataloader = get_dataloader(dataset, batch_size=global_batch_size, collate_fn=collate_with_fragment_edges)
 
     # Sampling
     print('Sampling...')
     for batch_i, data in tqdm(enumerate(dataloader), total=len(dataloader)):
-        chain, node_mask = ddpm.sample_chain(data, sample_fn=sample_fn, keep_frames=1)
+        batch_size = len(data['positions'])
+
+        chain = None
+        for i in range(5):
+            try:
+                chain, node_mask = ddpm.sample_chain(data, sample_fn=sample_fn, keep_frames=1)
+                break
+            except FoundNaNException:
+                continue
+        if chain is None:
+            raise Exception('Could not generate in 5 attempts')
+
         x = chain[0][:, :, :ddpm.n_dims]
         h = chain[0][:, :, ddpm.n_dims:]
 
@@ -216,7 +248,7 @@ def main(input_path, pocket_path, backbone_atoms_only, model, output_dir, n_samp
         mean = torch.sum(pos_masked, dim=1, keepdim=True) / N
         x = x + mean * node_mask
 
-        offset_idx = batch_i * batch_size
+        offset_idx = batch_i * global_batch_size
         names = [f'output_{offset_idx+i}_{name}' for i in range(batch_size)]
 
         node_mask[torch.where(data['pocket_mask'])] = 0
