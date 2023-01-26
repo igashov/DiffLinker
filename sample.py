@@ -96,6 +96,7 @@ if args.n_steps is not None:
 
 # Setting up the model
 model = model.eval().to(args.device)
+model.torch_device = args.device
 model.setup(stage='val')
 
 # Getting the dataloader

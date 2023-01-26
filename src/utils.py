@@ -21,8 +21,10 @@ class Logger(object):
         # you might want to specify some extra behavior here.
         pass
 
+
 def log(*args):
     print(f'[{datetime.now()}]', *args)
+
 
 class EMA:
     def __init__(self, beta):
