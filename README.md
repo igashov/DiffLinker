@@ -77,9 +77,10 @@ Please find the models [here](https://doi.org/10.5281/zenodo.7121300) or use dir
 * [[GEOM] DiffLinker](https://zenodo.org/record/7121300/files/geom_difflinker.ckpt?download=1)                 
 * [[GEOM] DiffLinker (given anchors)](https://zenodo.org/record/7121300/files/geom_difflinker_given_anchors.ckpt?download=1)   
 * [[GEOM] Size GNN](https://zenodo.org/record/7121300/files/geom_size_gnn.ckpt?download=1)                   
-* [[Pockets] DiffLinker (full pocket)](https://zenodo.org/record/7121300/files/pockets_difflinker_full.ckpt?download=1)         
-* [[Pockets] DiffLinker (backbone atoms)](https://zenodo.org/record/7121300/files/pockets_difflinker_backbone.ckpt?download=1)     
-* [[Pockets] DiffLinker (unconditioned)](https://zenodo.org/record/7121300/files/pockets_difflinker_unconditioned.ckpt?download=1)
+* [[Pockets] DiffLinker (full pocket)](https://zenodo.org/record/7775568/files/pockets_difflinker_full_no_anchors.ckpt?download=1)
+* [[Pockets] DiffLinker (full pocket, given anchors)](https://zenodo.org/record/7121300/files/pockets_difflinker_full.ckpt?download=1)         
+* [[Pockets] DiffLinker (backbone atoms, given anchors)](https://zenodo.org/record/7121300/files/pockets_difflinker_backbone.ckpt?download=1)     
+* [[Pockets] DiffLinker (unconditioned, given anchors)](https://zenodo.org/record/7121300/files/pockets_difflinker_unconditioned.ckpt?download=1)
 
 ## Usage
 
