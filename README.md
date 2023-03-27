@@ -70,7 +70,7 @@ conda activate difflinker
 
 ## Models
 
-Please find the models [here](https://doi.org/10.5281/zenodo.7121300) or use direct download links:
+Please find the models [here](https://doi.org/10.5281/zenodo.7775568) or use direct download links:
 * [[ZINC] DiffLinker](https://zenodo.org/record/7121300/files/zinc_difflinker.ckpt?download=1)                 
 * [[ZINC] DiffLinker (given anchors)](https://zenodo.org/record/7121300/files/zinc_difflinker_given_anchors.ckpt?download=1)   
 * [[ZINC] Size GNN](https://zenodo.org/record/7121300/files/zinc_size_gnn.ckpt?download=1)                   
