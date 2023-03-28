@@ -101,7 +101,12 @@ class ZincDataset(Dataset):
 
 
 class MOADDataset(Dataset):
-    def __init__(self, data_path, prefix, device):
+    def __init__(self, data=None, data_path=None, prefix=None, device=None):
+        assert (data is not None) or all(x is not None for x in (data_path, prefix, device))
+        if data is not None:
+            self.data = data
+            return
+
         if '.' in prefix:
             prefix, pocket_mode = prefix.split('.')
         else:

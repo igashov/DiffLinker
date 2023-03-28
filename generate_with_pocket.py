@@ -8,7 +8,7 @@ from rdkit import Chem
 from Bio.PDB import PDBParser
 
 from src import const
-from src.datasets import collate_with_fragment_edges, get_dataloader, get_one_hot, parse_molecule
+from src.datasets import collate_with_fragment_edges, get_dataloader, get_one_hot, parse_molecule, MOADDataset
 from src.lightning import DDPM
 from src.visualizer import save_xyz_file
 from src.utils import FoundNaNException
@@ -58,6 +58,10 @@ parser.add_argument(
     help='Comma-separated indices of anchor atoms '
          '(according to the order of atoms in the input fragments file, enumeration starts with 1)'
 )
+parser.add_argument(
+    '--max_batch_size', action='store', type=int, required=False, default=64,
+    help='Max batch size'
+)
 
 
 def read_molecule(path):
@@ -104,7 +108,8 @@ def read_pocket(path):
     }
 
 
-def main(input_path, pocket_path, backbone_atoms_only, model, output_dir, n_samples, n_steps, linker_size, anchors):
+def main(input_path, pocket_path, backbone_atoms_only, model,
+         output_dir, n_samples, n_steps, linker_size, anchors, max_batch_size):
 
     # Setup
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -219,8 +224,10 @@ def main(input_path, pocket_path, backbone_atoms_only, model, output_dir, n_samp
         'linker_mask': torch.tensor(linker_mask, dtype=const.TORCH_FLOAT, device=device),
         'num_atoms': len(positions),
     }] * n_samples
+    dataset = MOADDataset(data=dataset)
+    ddpm.val_dataset = dataset
 
-    global_batch_size = min(n_samples, 64)
+    global_batch_size = min(n_samples, max_batch_size)
     dataloader = get_dataloader(dataset, batch_size=global_batch_size, collate_fn=collate_with_fragment_edges)
 
     # Sampling
@@ -242,7 +249,7 @@ def main(input_path, pocket_path, backbone_atoms_only, model, output_dir, n_samp
         h = chain[0][:, :, ddpm.n_dims:]
 
         # Put the molecule back to the initial orientation
-        com_mask = data['fragment_mask'] if ddpm.center_of_mass == 'fragments' else data['anchors']
+        com_mask = data['fragment_only_mask'] if ddpm.center_of_mass == 'fragments' else data['anchors']
         pos_masked = data['positions'] * com_mask
         N = com_mask.sum(1, keepdims=True)
         mean = torch.sum(pos_masked, dim=1, keepdim=True) / N
@@ -274,5 +281,6 @@ if __name__ == '__main__':
         n_steps=args.n_steps,
         linker_size=args.linker_size,
         anchors=args.anchors,
+        max_batch_size=args.max_batch_size,
     )
 
