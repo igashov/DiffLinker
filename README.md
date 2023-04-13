@@ -102,10 +102,18 @@ python -W ignore  generate.py --fragments <YOUR_PATH> --model models/geom_diffli
 
 #### 2. With protein pocket (full atomic representation)
 
+If you have the full target protein and want the pocket to be computed automatically based on the input fragments:
 ```shell
 mkdir -p models
 wget https://zenodo.org/record/7121300/files/pockets_difflinker_full.ckpt?download=1 -O models/pockets_difflinker_full.ckpt
-python -W ignore generate_with_pocket.py --fragments <FRAGMENTS_PATH> --pocket <POCKETS_PATH> --model models/pockets_difflinker_full.ckpt --linker_size <DESIRED_LINKER_SIZE> --anchors <COMMA_SEPARATED_ANCHOR_INDICES> 
+python -W ignore generate_with_protein.py --fragments <FRAGMENTS_PATH> --protein <PROTEIN_PATH> --model models/pockets_difflinker_full.ckpt --linker_size <DESIRED_LINKER_SIZE> --anchors <COMMA_SEPARATED_ANCHOR_INDICES> 
+```
+
+If you want to use the file with pocket you computed yourself:
+```shell
+mkdir -p models
+wget https://zenodo.org/record/7121300/files/pockets_difflinker_full.ckpt?download=1 -O models/pockets_difflinker_full.ckpt
+python -W ignore generate_with_pocket.py --fragments <FRAGMENTS_PATH> --pocket <POCKET_PATH> --model models/pockets_difflinker_full.ckpt --linker_size <DESIRED_LINKER_SIZE> --anchors <COMMA_SEPARATED_ANCHOR_INDICES> 
 ```
 
 #### 3. With protein pocket (backbone representation)
@@ -113,12 +121,12 @@ python -W ignore generate_with_pocket.py --fragments <FRAGMENTS_PATH> --pocket <
 ```shell
 mkdir -p models
 wget https://zenodo.org/record/7121300/files/pockets_difflinker_backbone.ckpt?download=1 -O models/pockets_difflinker_backbone.ckpt
-python -W ignore generate_with_pocket.py --fragments <FRAGMENTS_PATH> --pocket <POCKETS_PATH> --backbone_atoms_only --model models/pockets_difflinker_backbone.ckpt --linker_size <DESIRED_LINKER_SIZE> --anchors <COMMA_SEPARATED_ANCHOR_INDICES>
+python -W ignore generate_with_pocket.py --fragments <FRAGMENTS_PATH> --pocket <POCKET_PATH> --backbone_atoms_only --model models/pockets_difflinker_backbone.ckpt --linker_size <DESIRED_LINKER_SIZE> --anchors <COMMA_SEPARATED_ANCHOR_INDICES>
 ```
 
 #### Note:
 - Fragment file should be passed in one of the following formats: `.sdf`, `.pdb`, `.mol`, `.mol2`
-- Protein pocket should be passed in `.pdb` format
+- Protein should be passed in `.pdb` format
 - Currently pocket-conditioned generation does not support prediction and sampling of the linker size (will be added later)
 - To obtain correct anchor indices for your fragments, you can open the file in PyMOL and click `Label -> atom identifiers -> ID`. You can select anchor atoms and pass the corresponding IDs to the generation script
 - For more options check help: `python generate.py --help` or `python generate_with_pocket.py --help`
