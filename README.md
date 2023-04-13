@@ -120,7 +120,6 @@ python -W ignore generate_with_pocket.py --fragments <FRAGMENTS_PATH> --pocket <
 - Fragment file should be passed in one of the following formats: `.sdf`, `.pdb`, `.mol`, `.mol2`
 - Protein pocket should be passed in `.pdb` format
 - Currently pocket-conditioned generation does not support prediction and sampling of the linker size (will be added later)
-- Provided pocket-conditioned models were trained with given anchor atoms so if you want to use them for your fragments you need to provide anchor atom ids
 - To obtain correct anchor indices for your fragments, you can open the file in PyMOL and click `Label -> atom identifiers -> ID`. You can select anchor atoms and pass the corresponding IDs to the generation script
 - For more options check help: `python generate.py --help` or `python generate_with_pocket.py --help`
 
