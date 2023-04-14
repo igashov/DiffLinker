@@ -424,6 +424,53 @@ def collate_with_fragment_edges(batch):
     return out
 
 
+def collate_with_fragment_without_pocket_edges(batch):
+    out = {}
+
+    # Filter out big molecules
+    # batch = [data for data in batch if data['num_atoms'] <= 50]
+
+    for i, data in enumerate(batch):
+        for key, value in data.items():
+            out.setdefault(key, []).append(value)
+
+    for key, value in out.items():
+        if key in const.DATA_LIST_ATTRS:
+            continue
+        if key in const.DATA_ATTRS_TO_PAD:
+            out[key] = torch.nn.utils.rnn.pad_sequence(value, batch_first=True, padding_value=0)
+            continue
+        raise Exception(f'Unknown batch key: {key}')
+
+    frag_mask = out['fragment_only_mask']
+    edge_mask = frag_mask[:, None, :] * frag_mask[:, :, None]
+    diag_mask = ~torch.eye(edge_mask.size(1), dtype=const.TORCH_INT, device=frag_mask.device).unsqueeze(0)
+    edge_mask *= diag_mask
+
+    batch_size, n_nodes = frag_mask.size()
+    out['edge_mask'] = edge_mask.view(batch_size * n_nodes * n_nodes, 1)
+
+    # Building edges and covalent bond values
+    rows, cols, bonds = [], [], []
+    for batch_idx in range(batch_size):
+        for i in range(n_nodes):
+            for j in range(n_nodes):
+                rows.append(i + batch_idx * n_nodes)
+                cols.append(j + batch_idx * n_nodes)
+
+    edges = [torch.LongTensor(rows).to(frag_mask.device), torch.LongTensor(cols).to(frag_mask.device)]
+    out['edges'] = edges
+
+    atom_mask = (out['fragment_mask'].bool() | out['linker_mask'].bool()).to(const.TORCH_INT)
+    out['atom_mask'] = atom_mask[:, :, None]
+
+    for key in const.DATA_ATTRS_TO_ADD_LAST_DIM:
+        if key in out.keys():
+            out[key] = out[key][:, :, None]
+
+    return out
+
+
 def get_dataloader(dataset, batch_size, collate_fn=collate, shuffle=False):
     return DataLoader(dataset, batch_size, collate_fn=collate_fn, shuffle=shuffle)
 

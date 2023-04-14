@@ -79,10 +79,10 @@ class SizeClassifier(pl.LightningModule):
     def test_dataloader(self):
         return get_dataloader(self.test_dataset, self.batch_size, collate_fn=collate_with_fragment_edges)
 
-    def forward(self, data, return_loss=True):
+    def forward(self, data, return_loss=True, with_pocket=False):
         h = data['one_hot']
         x = data['positions']
-        fragment_mask = data['fragment_mask']
+        fragment_mask = data['fragment_only_mask'] if with_pocket else data['fragment_mask']
         linker_mask = data['linker_mask']
         edge_mask = data['edge_mask']
         edges = data['edges']

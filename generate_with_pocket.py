@@ -8,7 +8,9 @@ from rdkit import Chem
 from Bio.PDB import PDBParser
 
 from src import const
-from src.datasets import collate_with_fragment_edges, get_dataloader, get_one_hot, parse_molecule, MOADDataset
+from src.datasets import (
+    collate_with_fragment_without_pocket_edges, get_dataloader, get_one_hot, parse_molecule, MOADDataset
+)
 from src.lightning import DDPM
 from src.visualizer import save_xyz_file
 from src.utils import FoundNaNException
@@ -127,7 +129,7 @@ def main(input_path, pocket_path, backbone_atoms_only, model,
         size_nn = SizeClassifier.load_from_checkpoint(linker_size, map_location=device).eval().to(device)
 
         def sample_fn(_data):
-            out, _ = size_nn.forward(_data, return_loss=False)
+            out, _ = size_nn.forward(_data, return_loss=False, with_pocket=True)
             probabilities = torch.softmax(out, dim=1)
             distribution = torch.distributions.Categorical(probs=probabilities)
             samples = distribution.sample()
@@ -228,7 +230,9 @@ def main(input_path, pocket_path, backbone_atoms_only, model,
     ddpm.val_dataset = dataset
 
     global_batch_size = min(n_samples, max_batch_size)
-    dataloader = get_dataloader(dataset, batch_size=global_batch_size, collate_fn=collate_with_fragment_edges)
+    dataloader = get_dataloader(
+        dataset, batch_size=global_batch_size, collate_fn=collate_with_fragment_without_pocket_edges
+    )
 
     # Sampling
     print('Sampling...')
