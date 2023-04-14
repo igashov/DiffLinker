@@ -174,6 +174,9 @@ python -W ignore train_size_gnn.py \
                  --logs logs
 ```
 
+There are the distributions of numbers of atoms in linkers used for training linker size prediction GNNs:
+
+<img src="resources/linker_size_distributions.png">
 
 ### Sampling
 

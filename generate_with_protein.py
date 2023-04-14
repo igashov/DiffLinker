@@ -41,7 +41,7 @@ parser.add_argument(
 )
 parser.add_argument(
     '--linker_size', action='store', type=str, required=True,
-    help='Either linker size (int)'
+    help='Linker size (int) or allowed size boundaries (comma-separated integers) or path to the size prediction model'
 )
 parser.add_argument(
     '--output', action='store', type=str, required=False, default='./',
@@ -158,19 +158,30 @@ def main(input_path, protein_path, backbone_atoms_only, model,
             return torch.ones(_data['positions'].shape[0], device=device, dtype=const.TORCH_INT) * linker_size
 
     else:
-        print(f'Will generate linkers with sampled numbers of atoms')
-        size_nn = SizeClassifier.load_from_checkpoint(linker_size, map_location=device).eval().to(device)
+        boundaries = [x.strip() for x in linker_size.split(',')]
+        if len(boundaries) == 2 and boundaries[0].isdigit() and boundaries[1].isdigit():
+            left = int(boundaries[0])
+            right = int(boundaries[1])
+            print(f'Will generate linkers with numbers of atoms sampled from U({left}, {right})')
 
-        def sample_fn(_data):
-            out, _ = size_nn.forward(_data, return_loss=False, with_pocket=True)
-            probabilities = torch.softmax(out, dim=1)
-            distribution = torch.distributions.Categorical(probs=probabilities)
-            samples = distribution.sample()
-            sizes = []
-            for label in samples.detach().cpu().numpy():
-                sizes.append(size_nn.linker_id2size[label])
-            sizes = torch.tensor(sizes, device=samples.device, dtype=const.TORCH_INT)
-            return sizes
+            def sample_fn(_data):
+                shape = len(_data['positions']),
+                return torch.randint(left, right + 1, shape, device=device, dtype=const.TORCH_INT)
+
+        else:
+            print(f'Will generate linkers with sampled numbers of atoms')
+            size_nn = SizeClassifier.load_from_checkpoint(linker_size, map_location=device).eval().to(device)
+
+            def sample_fn(_data):
+                out, _ = size_nn.forward(_data, return_loss=False, with_pocket=True)
+                probabilities = torch.softmax(out, dim=1)
+                distribution = torch.distributions.Categorical(probs=probabilities)
+                samples = distribution.sample()
+                sizes = []
+                for label in samples.detach().cpu().numpy():
+                    sizes.append(size_nn.linker_id2size[label])
+                sizes = torch.tensor(sizes, device=samples.device, dtype=const.TORCH_INT)
+                return sizes
 
     ddpm = DDPM.load_from_checkpoint(model, map_location=device).eval().to(device)
 
@@ -217,7 +228,7 @@ def main(input_path, protein_path, backbone_atoms_only, model,
     anchor_flags = np.zeros_like(charges)
     if anchors is not None:
         for anchor in anchors.split(','):
-            anchor_flags[int(anchor) - 1] = 1
+            anchor_flags[int(anchor.strip()) - 1] = 1
 
     fragment_only_mask = np.concatenate([
         np.ones_like(frag_charges),
