@@ -68,6 +68,8 @@ Activate the environment:
 conda activate difflinker
 ```
 
+Normally, the whole installation process takes 5-10 min.
+
 ## Models
 
 Please find the models [here](https://doi.org/10.5281/zenodo.7775568) or use direct download links:
