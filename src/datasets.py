@@ -212,17 +212,6 @@ class MOADDataset(Dataset):
 
         return data
 
-    @staticmethod
-    def create_edges(positions, fragment_mask_only, linker_mask_only):
-        ligand_mask = fragment_mask_only.astype(bool) | linker_mask_only.astype(bool)
-        ligand_adj = ligand_mask[:, None] & ligand_mask[None, :]
-        proximity_adj = np.linalg.norm(positions[:, None, :] - positions[None, :, :], axis=-1) <= 6
-        full_adj = ligand_adj | proximity_adj
-        full_adj &= ~np.eye(len(positions)).astype(bool)
-
-        curr_rows, curr_cols = np.where(full_adj)
-        return [curr_rows, curr_cols]
-
 
 class OptimisedMOADDataset(MOADDataset):
     # TODO: finish testing

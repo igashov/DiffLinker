@@ -480,12 +480,16 @@ class DynamicsWithPockets(Dynamics):
         if linker_mask is not None:
             linker_mask = linker_mask.view(bs * n_nodes, 1)  # (B*N, 1)
 
+        fragment_only_mask = context[..., -2].view(bs * n_nodes, 1)  # (B*N, 1)
+        pocket_only_mask = context[..., -1].view(bs * n_nodes, 1)  # (B*N, 1)
+        assert torch.all(fragment_only_mask.bool() | pocket_only_mask.bool() | linker_mask.bool() == node_mask.bool())
+
         # Reshaping node features & adding time feature
         xh = xh.view(bs * n_nodes, -1).clone() * node_mask  # (B*N, D)
         x = xh[:, :self.n_dims].clone()  # (B*N, 3)
         h = xh[:, self.n_dims:].clone()  # (B*N, nf)
 
-        edges = self.get_dist_edges(x, node_mask, edge_mask)
+        edges = self.get_dist_edges(x, node_mask, edge_mask, linker_mask, fragment_only_mask, pocket_only_mask)
         if self.condition_time:
             if np.prod(t.size()) == 1:
                 # t is the same for all elements in batch.
@@ -539,13 +543,46 @@ class DynamicsWithPockets(Dynamics):
 
         return torch.cat([vel, h_final], dim=2)
 
+    # @staticmethod
+    # def get_dist_edges(x, node_mask, batch_mask):
+    #     node_mask = node_mask.squeeze().bool()
+    #     batch_adj = (batch_mask[:, None] == batch_mask[None, :])
+    #     nodes_adj = (node_mask[:, None] & node_mask[None, :])
+    #     dists_adj = (torch.cdist(x, x) <= 4)
+    #     rm_self_loops = ~torch.eye(x.size(0), dtype=torch.bool, device=x.device)
+    #     adj = batch_adj & nodes_adj & dists_adj & rm_self_loops
+    #     edges = torch.stack(torch.where(adj))
+    #     return edges
+
     @staticmethod
-    def get_dist_edges(x, node_mask, batch_mask):
+    def get_dist_edges(x, node_mask, batch_mask, linker_mask, fragment_only_mask, pocket_only_mask):
         node_mask = node_mask.squeeze().bool()
+        linker_mask = linker_mask.squeeze().bool() & node_mask
+        fragment_only_mask = fragment_only_mask.squeeze().bool() & node_mask
+        pocket_only_mask = pocket_only_mask.squeeze().bool() & node_mask
+        ligand_mask = linker_mask | fragment_only_mask
+
+        # General constrains:
         batch_adj = (batch_mask[:, None] == batch_mask[None, :])
         nodes_adj = (node_mask[:, None] & node_mask[None, :])
-        dists_adj = (torch.cdist(x, x) <= 4)
         rm_self_loops = ~torch.eye(x.size(0), dtype=torch.bool, device=x.device)
-        adj = batch_adj & nodes_adj & dists_adj & rm_self_loops
+        constraints = batch_adj & nodes_adj & rm_self_loops
+
+        # Ligand atoms – fully-connected graph
+        ligand_adj = (ligand_mask[:, None] & ligand_mask[None, :])
+        ligand_interactions = ligand_adj & constraints
+
+        # Pocket atoms - within 4A
+        pocket_adj = (pocket_only_mask[:, None] & pocket_only_mask[None, :])
+        pocket_dists_adj = (torch.cdist(x, x) <= 4)
+        pocket_interactions = pocket_adj & pocket_dists_adj & constraints
+
+        # Pocket-ligand atoms - within 10A
+        pocket_ligand_adj = (ligand_mask[:, None] & pocket_only_mask[None, :])
+        pocket_ligand_adj = pocket_ligand_adj | (pocket_only_mask[:, None] & ligand_mask[None, :])
+        pocket_ligand_dists_adj = (torch.cdist(x, x) <= 10)
+        pocket_ligand_interactions = pocket_ligand_adj & pocket_ligand_dists_adj & constraints
+
+        adj = ligand_interactions | pocket_interactions | pocket_ligand_interactions
         edges = torch.stack(torch.where(adj))
         return edges

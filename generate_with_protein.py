@@ -13,7 +13,7 @@ from src.datasets import (
 )
 from src.lightning import DDPM
 from src.visualizer import save_xyz_file
-from src.utils import FoundNaNException
+from src.utils import FoundNaNException, set_deterministic
 from tqdm import tqdm
 
 from src.linker_size_lightning import SizeClassifier
@@ -63,6 +63,10 @@ parser.add_argument(
 parser.add_argument(
     '--max_batch_size', action='store', type=int, required=False, default=64,
     help='Max batch size'
+)
+parser.add_argument(
+    '--random_seed', action='store', type=int, required=False, default=None,
+    help='Random seed'
 )
 
 
@@ -144,11 +148,14 @@ def get_pocket(mol, pdb_path, backbone_atoms_only=False):
 
 
 def main(input_path, protein_path, backbone_atoms_only, model,
-         output_dir, n_samples, n_steps, linker_size, anchors, max_batch_size):
+         output_dir, n_samples, n_steps, linker_size, anchors, max_batch_size, random_seed):
 
     # Setup
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     os.makedirs(output_dir, exist_ok=True)
+
+    if random_seed is not None:
+        set_deterministic(random_seed)
 
     if linker_size.isdigit():
         print(f'Will generate linkers with {linker_size} atoms')
@@ -320,5 +327,6 @@ if __name__ == '__main__':
         linker_size=args.linker_size,
         anchors=args.anchors,
         max_batch_size=args.max_batch_size,
+        random_seed=args.random_seed,
     )
 

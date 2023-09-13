@@ -9,7 +9,7 @@ from pytorch_lightning import Trainer, callbacks, loggers
 
 from src.const import NUMBER_OF_ATOM_TYPES, GEOM_NUMBER_OF_ATOM_TYPES
 from src.lightning import DDPM
-from src.utils import disable_rdkit_logging, Logger
+from src.utils import disable_rdkit_logging, set_deterministic, Logger
 
 
 def find_last_checkpoint(checkpoints_dir):
@@ -36,6 +36,7 @@ def main(args):
 
     samples_dir = os.path.join(args.logs, 'samples', experiment)
 
+    set_deterministic(args.seed)
     torch_device = 'cuda:0' if args.device == 'gpu' else 'cpu'
     wandb_logger = loggers.WandbLogger(
         save_dir=args.logs,
@@ -190,6 +191,7 @@ if __name__ == '__main__':
     p.add_argument('--center_of_mass', type=str, default='fragments', help='Where to center the data: fragments | anchors')
     p.add_argument('--inpainting', action='store_true', default=False, help='Inpainting mode (full generation)')
     p.add_argument('--remove_anchors_context', action='store_true', default=False, help='Remove anchors context')
+    p.add_argument('--seed', type=int, default=42, help='Random seed')
 
     disable_rdkit_logging()
 
