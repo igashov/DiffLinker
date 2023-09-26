@@ -44,7 +44,7 @@ class DDPM(pl.LightningModule):
         normalize_factors, include_charges, model,
         data_path, train_data_prefix, val_data_prefix, batch_size, lr, torch_device, test_epochs, n_stability_samples,
         normalization=None, log_iterations=None, samples_dir=None, data_augmentation=False,
-        center_of_mass='fragments', inpainting=False, anchors_context=True,
+        center_of_mass='fragments', inpainting=False, anchors_context=True, graph_type='FC',
     ):
         super(DDPM, self).__init__()
 
@@ -94,6 +94,7 @@ class DDPM(pl.LightningModule):
             model=model,
             normalization=normalization,
             centering=inpainting,
+            graph_type=graph_type,
         )
         edm_class = InpaintingEDM if inpainting else EDM
         self.edm = edm_class(

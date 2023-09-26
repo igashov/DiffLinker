@@ -78,6 +78,7 @@ def load_sampled_dataset(folder, idx2true_mol_smi, idx2true_frag_smi):
     pred_link_smi = []
     true_mols_smi = []
     true_frags_smi = []
+    uuids = []
 
     for fname in tqdm(os.listdir(folder)):
         if fname.isdigit():
@@ -90,8 +91,9 @@ def load_sampled_dataset(folder, idx2true_mol_smi, idx2true_frag_smi):
             pred_link_smi += link_smi
             true_mols_smi += [true_mol_smi] * len(mols)
             true_frags_smi += [true_frag_smi] * len(mols)
+            uuids += [fname] * len(mols)
 
-    return pred_mols, pred_mols_smi, pred_link_smi, true_mols_smi, true_frags_smi
+    return pred_mols, pred_mols_smi, pred_link_smi, true_mols_smi, true_frags_smi, uuids
 
 
 def reformat(samples, dataset, true_smiles_path, checkpoint, formatted, linker_size_model_name):
@@ -120,7 +122,7 @@ def reformat(samples, dataset, true_smiles_path, checkpoint, formatted, linker_s
         idx2true_mol_smi = dict(enumerate(true_smiles_table.molecule.values))
         idx2true_frag_smi = dict(enumerate(true_smiles_table.fragments.values))
 
-    pred_mols, pred_mols_smi, pred_link_smi, true_mols_smi, true_frag_smi = load_sampled_dataset(
+    pred_mols, pred_mols_smi, pred_link_smi, true_mols_smi, true_frag_smi, uuids = load_sampled_dataset(
         folder=input_path,
         idx2true_mol_smi=idx2true_mol_smi,
         idx2true_frag_smi=idx2true_frag_smi,
@@ -129,7 +131,7 @@ def reformat(samples, dataset, true_smiles_path, checkpoint, formatted, linker_s
     os.makedirs(formatted_output_dir, exist_ok=True)
     with open(out_smi_path, 'w') as f:
         for i in range(len(pred_mols_smi)):
-            f.write(f'{true_frag_smi[i]} {true_mols_smi[i]} {pred_mols_smi[i]} {pred_link_smi[i]}\n')
+            f.write(f'{true_frag_smi[i]} {true_mols_smi[i]} {pred_mols_smi[i]} {pred_link_smi[i]} {uuids[i]}\n')
 
     with Chem.SDWriter(open(out_sdf_path, 'w')) as writer:
         for mol in pred_mols:

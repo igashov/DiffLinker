@@ -325,7 +325,7 @@ class Dynamics(nn.Module):
             self, n_dims, in_node_nf, context_node_nf, hidden_nf=64, device='cpu', activation=nn.SiLU(),
             n_layers=4, attention=False, condition_time=True, tanh=False, norm_constant=0, inv_sublayers=2,
             sin_embedding=False, normalization_factor=100, aggregation_method='sum', model='egnn_dynamics',
-            normalization=None, centering=False,
+            normalization=None, centering=False, graph_type='FC',
     ):
         super().__init__()
         self.device = device
@@ -334,6 +334,7 @@ class Dynamics(nn.Module):
         self.condition_time = condition_time
         self.model = model
         self.centering = centering
+        self.graph_type = graph_type
 
         in_node_nf = in_node_nf + context_node_nf + condition_time
         if self.model == 'egnn_dynamics':
@@ -378,6 +379,8 @@ class Dynamics(nn.Module):
         - edge_mask: (B*N*N, 1)
         - context: (B, N, C)
         """
+
+        assert self.graph_type == 'FC'
 
         bs, n_nodes = xh.shape[0], xh.shape[1]
         edges = self.get_edges(n_nodes, bs)  # (2, B*N)
@@ -489,7 +492,12 @@ class DynamicsWithPockets(Dynamics):
         x = xh[:, :self.n_dims].clone()  # (B*N, 3)
         h = xh[:, self.n_dims:].clone()  # (B*N, nf)
 
-        edges = self.get_dist_edges(x, node_mask, edge_mask, linker_mask, fragment_only_mask, pocket_only_mask)
+        assert self.graph_type in ['4A', 'FC-4A', 'FC-10A-4A']
+        if self.graph_type == '4A':
+            edges = self.get_dist_edges_4A(x, node_mask, edge_mask)
+        else:
+            edges = self.get_dist_edges(x, node_mask, edge_mask, linker_mask, fragment_only_mask, pocket_only_mask)
+
         if self.condition_time:
             if np.prod(t.size()) == 1:
                 # t is the same for all elements in batch.
@@ -543,19 +551,18 @@ class DynamicsWithPockets(Dynamics):
 
         return torch.cat([vel, h_final], dim=2)
 
-    # @staticmethod
-    # def get_dist_edges(x, node_mask, batch_mask):
-    #     node_mask = node_mask.squeeze().bool()
-    #     batch_adj = (batch_mask[:, None] == batch_mask[None, :])
-    #     nodes_adj = (node_mask[:, None] & node_mask[None, :])
-    #     dists_adj = (torch.cdist(x, x) <= 4)
-    #     rm_self_loops = ~torch.eye(x.size(0), dtype=torch.bool, device=x.device)
-    #     adj = batch_adj & nodes_adj & dists_adj & rm_self_loops
-    #     edges = torch.stack(torch.where(adj))
-    #     return edges
-
     @staticmethod
-    def get_dist_edges(x, node_mask, batch_mask, linker_mask, fragment_only_mask, pocket_only_mask):
+    def get_dist_edges_4A(x, node_mask, batch_mask):
+        node_mask = node_mask.squeeze().bool()
+        batch_adj = (batch_mask[:, None] == batch_mask[None, :])
+        nodes_adj = (node_mask[:, None] & node_mask[None, :])
+        dists_adj = (torch.cdist(x, x) <= 4)
+        rm_self_loops = ~torch.eye(x.size(0), dtype=torch.bool, device=x.device)
+        adj = batch_adj & nodes_adj & dists_adj & rm_self_loops
+        edges = torch.stack(torch.where(adj))
+        return edges
+
+    def get_dist_edges(self, x, node_mask, batch_mask, linker_mask, fragment_only_mask, pocket_only_mask):
         node_mask = node_mask.squeeze().bool()
         linker_mask = linker_mask.squeeze().bool() & node_mask
         fragment_only_mask = fragment_only_mask.squeeze().bool() & node_mask
@@ -578,9 +585,10 @@ class DynamicsWithPockets(Dynamics):
         pocket_interactions = pocket_adj & pocket_dists_adj & constraints
 
         # Pocket-ligand atoms - within 10A
+        pocket_ligand_cutoff = 4 if self.graph_type == 'FC-4A' else 10
         pocket_ligand_adj = (ligand_mask[:, None] & pocket_only_mask[None, :])
         pocket_ligand_adj = pocket_ligand_adj | (pocket_only_mask[:, None] & ligand_mask[None, :])
-        pocket_ligand_dists_adj = (torch.cdist(x, x) <= 10)
+        pocket_ligand_dists_adj = (torch.cdist(x, x) <= pocket_ligand_cutoff)
         pocket_ligand_interactions = pocket_ligand_adj & pocket_ligand_dists_adj & constraints
 
         adj = ligand_interactions | pocket_interactions | pocket_ligand_interactions

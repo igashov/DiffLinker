@@ -91,6 +91,7 @@ def main(args):
         center_of_mass=args.center_of_mass,
         inpainting=args.inpainting,
         anchors_context=anchors_context,
+        graph_type=args.graph_type,
     )
     checkpoint_callback = callbacks.ModelCheckpoint(
         dirpath=checkpoints_dir,
@@ -185,12 +186,13 @@ if __name__ == '__main__':
     p.add_argument('--include_charges', type=eval, default=True,help='include atom charge or not')
     p.add_argument('--visualize_every_batch', type=int, default=1e8,help="Can be used to visualize multiple times per epoch")
     p.add_argument('--normalization_factor', type=float, default=1,help="Normalize the sum aggregation of EGNN")
-    p.add_argument('--aggregation_method', type=str, default='sum',help='"sum" or "mean"')
+    p.add_argument('--aggregation_method', type=str, default='sum', help='"sum" or "mean"')
     p.add_argument('--normalization', type=str, default='batch_norm', help='batch_norm')
     p.add_argument('--wandb_entity', type=str, default='geometric', help='Entity (project) name')
     p.add_argument('--center_of_mass', type=str, default='fragments', help='Where to center the data: fragments | anchors')
     p.add_argument('--inpainting', action='store_true', default=False, help='Inpainting mode (full generation)')
     p.add_argument('--remove_anchors_context', action='store_true', default=False, help='Remove anchors context')
+    p.add_argument('--graph_type', type=str, default='FC', help='FC, 4A, FC-4A, FC-10A-4A')
     p.add_argument('--seed', type=int, default=42, help='Random seed')
 
     disable_rdkit_logging()
