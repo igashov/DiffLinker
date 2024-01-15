@@ -1,6 +1,7 @@
 # DiffLinker: Equivariant 3D-Conditional Diffusion Model for Molecular Linker Design
 
-[![Demo](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/igashov/DiffLinker)
+[![Demo](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/igashov/DiffLinker) [![DOI](https://zenodo.org/badge/542772373.svg)](https://zenodo.org/doi/10.5281/zenodo.10515726)
+
 
 Official implementation of DiffLinker, an [**Equivariant 3D-conditional Diffusion Model for Molecular Linker Design**](https://arxiv.org/abs/2210.05274) by Ilia Igashov, Hannes Stärk, Clément Vignac, Victor Garcia Satorras, Pascal Frossard, Max Welling, Michael Bronstein and Bruno Correia.
 
