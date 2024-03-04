@@ -1,4 +1,4 @@
-exp_name: 'pockets_full_noanch_fc'
+exp_name: 'pockets_full_no_anchors_fc'
 data: /home/igashov/work/diffusion_linker_data/e3_ddpm_linker_design/bindingmoad
 train_data_prefix: MOAD_train.full
 val_data_prefix: MOAD_val.full
@@ -11,7 +11,7 @@ enable_progress_bar: False
 
 model: egnn_dynamics
 lr: 2.0e-4
-batch_size: 32
+batch_size: 16
 n_layers: 6
 n_epochs: 1000
 test_epochs: 20
@@ -28,6 +28,7 @@ diffusion_loss_type: l2
 data_augmentation: False
 center_of_mass: fragments
 remove_anchors_context: True
+graph_type: FC-10A-4A
 
 sin_embedding: False
 normalization_factor: 100

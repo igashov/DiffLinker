@@ -27,6 +27,7 @@ include_charges: False
 diffusion_loss_type: l2
 data_augmentation: False
 center_of_mass: anchors
+graph_type: 4A
 
 sin_embedding: False
 normalization_factor: 100

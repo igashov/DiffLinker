@@ -3,3 +3,7 @@ models
 trajectories
 logs
 formatted
+.DS_Store
+._.DS_Store
+.idea
+__pycache__

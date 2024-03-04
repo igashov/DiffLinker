@@ -148,6 +148,15 @@ class MOADDataset(Dataset):
             total=len(table)
         )
         for (_, row), fragments, linker, pocket_data in generator:
+            pdb = row['molecule_name'].split('_')[0]
+            if pdb in {
+                '5ou2', '5ou3', '6hay',
+                '5mo8', '5mo5', '5mo7', '5ctp', '5cu2', '5cu4', '5mmr', '5mmf',
+                '5moe', '3iw7', '4i9n', '3fi2', '3fi3',
+            }:
+                print(f'Skipping pdb={pdb}')
+                continue
+
             uuid = row['uuid']
             name = row['molecule']
             frag_pos, frag_one_hot, frag_charges = parse_molecule(fragments, is_geom=is_geom)

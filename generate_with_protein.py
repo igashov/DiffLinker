@@ -180,7 +180,7 @@ def main(input_path, protein_path, backbone_atoms_only, model,
             size_nn = SizeClassifier.load_from_checkpoint(linker_size, map_location=device).eval().to(device)
 
             def sample_fn(_data):
-                out, _ = size_nn.forward(_data, return_loss=False, with_pocket=True)
+                out, _ = size_nn.forward(_data, return_loss=False, with_pocket=True, adjust_shape=True)
                 probabilities = torch.softmax(out, dim=1)
                 distribution = torch.distributions.Categorical(probs=probabilities)
                 samples = distribution.sample()

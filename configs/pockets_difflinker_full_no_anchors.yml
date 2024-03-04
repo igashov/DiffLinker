@@ -28,6 +28,7 @@ diffusion_loss_type: l2
 data_augmentation: False
 center_of_mass: fragments
 remove_anchors_context: True
+graph_type: 4A
 
 sin_embedding: False
 normalization_factor: 100

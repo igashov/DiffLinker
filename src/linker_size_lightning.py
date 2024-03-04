@@ -40,6 +40,7 @@ class SizeClassifier(pl.LightningModule):
         self.lr = lr
         self.torch_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.loss_weights = None if loss_weights is None else torch.tensor(loss_weights, device=self.torch_device)
+        self.in_node_nf = in_node_nf
         self.gnn = SizeGNN(
             in_node_nf=in_node_nf,
             hidden_nf=hidden_nf,
@@ -79,7 +80,7 @@ class SizeClassifier(pl.LightningModule):
     def test_dataloader(self):
         return get_dataloader(self.test_dataset, self.batch_size, collate_fn=collate_with_fragment_edges)
 
-    def forward(self, data, return_loss=True, with_pocket=False):
+    def forward(self, data, return_loss=True, with_pocket=False, adjust_shape=False):
         h = data['one_hot']
         x = data['positions']
         fragment_mask = data['fragment_only_mask'] if with_pocket else data['fragment_mask']
@@ -90,6 +91,10 @@ class SizeClassifier(pl.LightningModule):
         # Considering only fragments
         x = x * fragment_mask
         h = h * fragment_mask
+
+        if h.shape[-1] != self.in_node_nf and adjust_shape:
+            assert torch.allclose(h[..., -1], torch.zeros_like(h[..., -1]))
+            h = h[..., :-1]
 
         # Reshaping
         bs, n_nodes = x.shape[0], x.shape[1]
