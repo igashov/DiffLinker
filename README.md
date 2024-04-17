@@ -2,7 +2,7 @@
 
 [![Demo](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/igashov/DiffLinker)
 
-Official implementation of DiffLinker, an [**Equivariant 3D-conditional Diffusion Model for Molecular Linker Design**](https://arxiv.org/abs/2210.05274) by Ilia Igashov, Hannes Stärk, Clément Vignac, Victor Garcia Satorras, Pascal Frossard, Max Welling, Michael Bronstein and Bruno Correia.
+Official implementation of DiffLinker, an [**Equivariant 3D-conditional Diffusion Model for Molecular Linker Design**](https://www.nature.com/articles/s42256-024-00815-9) by Ilia Igashov, Hannes Stärk, Clément Vignac, Victor Garcia Satorras, Pascal Frossard, Max Welling, Michael Bronstein and Bruno Correia.
 
 >Given a set of disconnected fragments in 3D, DiffLinker places missing atoms in between and designs a molecule incorporating all the initial fragments. 
 Our method can link an arbitrary number of fragments, requires no information on the attachment atoms and linker size, and can be conditioned on the protein pockets.
@@ -72,15 +72,15 @@ Normally, the whole installation process takes 5-10 min.
 
 ## Models
 
-Please find the models [here](https://doi.org/10.5281/zenodo.7775568) or use direct download links:
+Please find the models [here](https://zenodo.org/records/10988017) or use direct download links:
 * [[ZINC] DiffLinker](https://zenodo.org/record/7121300/files/zinc_difflinker.ckpt?download=1)                 
 * [[ZINC] DiffLinker (given anchors)](https://zenodo.org/record/7121300/files/zinc_difflinker_given_anchors.ckpt?download=1)   
 * [[ZINC] Size GNN](https://zenodo.org/record/7121300/files/zinc_size_gnn.ckpt?download=1)                   
 * [[GEOM] DiffLinker](https://zenodo.org/record/7121300/files/geom_difflinker.ckpt?download=1)                 
 * [[GEOM] DiffLinker (given anchors)](https://zenodo.org/record/7121300/files/geom_difflinker_given_anchors.ckpt?download=1)   
 * [[GEOM] Size GNN](https://zenodo.org/record/7121300/files/geom_size_gnn.ckpt?download=1)                   
-* [[Pockets] DiffLinker (full pocket)](https://zenodo.org/record/7775568/files/pockets_difflinker_full_no_anchors.ckpt?download=1)
-* [[Pockets] DiffLinker (full pocket, given anchors)](https://zenodo.org/record/7121300/files/pockets_difflinker_full.ckpt?download=1)         
+* [[Pockets] DiffLinker (full pocket)](https://zenodo.org/records/10988017/files/pockets_difflinker_full_no_anchors_fc_pdb_excluded.ckpt?download=1)
+* [[Pockets] DiffLinker (full pocket, given anchors)](https://zenodo.org/records/10988017/files/pockets_difflinker_full_fc_pdb_excluded.ckpt?download=1)         
 * [[Pockets] DiffLinker (backbone atoms, given anchors)](https://zenodo.org/record/7121300/files/pockets_difflinker_backbone.ckpt?download=1)     
 * [[Pockets] DiffLinker (unconditioned, given anchors)](https://zenodo.org/record/7121300/files/pockets_difflinker_unconditioned.ckpt?download=1)
 
@@ -107,14 +107,14 @@ python -W ignore  generate.py --fragments <YOUR_PATH> --model models/geom_diffli
 If you have the full target protein and want the pocket to be computed automatically based on the input fragments:
 ```shell
 mkdir -p models
-wget https://zenodo.org/record/7121300/files/pockets_difflinker_full.ckpt?download=1 -O models/pockets_difflinker_full.ckpt
+wget https://zenodo.org/records/10988017/files/pockets_difflinker_full_no_anchors_fc_pdb_excluded.ckpt?download=1 -O models/pockets_difflinker_full.ckpt
 python -W ignore generate_with_protein.py --fragments <FRAGMENTS_PATH> --protein <PROTEIN_PATH> --model models/pockets_difflinker_full.ckpt --linker_size <DESIRED_LINKER_SIZE> --anchors <COMMA_SEPARATED_ANCHOR_INDICES> 
 ```
 
 If you want to use the file with pocket you computed yourself:
 ```shell
 mkdir -p models
-wget https://zenodo.org/record/7121300/files/pockets_difflinker_full.ckpt?download=1 -O models/pockets_difflinker_full.ckpt
+wget https://zenodo.org/records/10988017/files/pockets_difflinker_full_no_anchors_fc_pdb_excluded.ckpt?download=1 -O models/pockets_difflinker_full.ckpt
 python -W ignore generate_with_pocket.py --fragments <FRAGMENTS_PATH> --pocket <POCKET_PATH> --model models/pockets_difflinker_full.ckpt --linker_size <DESIRED_LINKER_SIZE> --anchors <COMMA_SEPARATED_ANCHOR_INDICES> 
 ```
 
@@ -262,6 +262,21 @@ python -W ignore compute_metrics.py \
                  diffusion
 ```
 All the metrics will be saved in the directory `./formatted`.
+
+# Reference
+
+> Igashov, I., Stärk, H., Vignac, C. et al. Equivariant 3D-conditional diffusion model for molecular linker design. Nat Mach Intell (2024). https://doi.org/10.1038/s42256-024-00815-9
+
+```
+@article{igashov2024equivariant,
+  title={Equivariant 3D-conditional diffusion model for molecular linker design},
+  author={Igashov, Ilia and St{\"a}rk, Hannes and Vignac, Cl{\'e}ment and Schneuing, Arne and Satorras, Victor Garcia and Frossard, Pascal and Welling, Max and Bronstein, Michael and Correia, Bruno},
+  journal={Nature Machine Intelligence},
+  pages={1--11},
+  year={2024},
+  publisher={Nature Publishing Group UK London}
+}
+```
 
 # Contact
 
