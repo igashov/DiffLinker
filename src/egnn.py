@@ -493,7 +493,7 @@ class DynamicsWithPockets(Dynamics):
         h = xh[:, self.n_dims:].clone()  # (B*N, nf)
 
         assert self.graph_type in ['4A', 'FC-4A', 'FC-10A-4A']
-        if self.graph_type == '4A':
+        if self.graph_type == '4A' or self.graph_type is None:
             edges = self.get_dist_edges_4A(x, node_mask, edge_mask)
         else:
             edges = self.get_dist_edges(x, node_mask, edge_mask, linker_mask, fragment_only_mask, pocket_only_mask)

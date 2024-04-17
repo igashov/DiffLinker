@@ -44,7 +44,7 @@ class DDPM(pl.LightningModule):
         normalize_factors, include_charges, model,
         data_path, train_data_prefix, val_data_prefix, batch_size, lr, torch_device, test_epochs, n_stability_samples,
         normalization=None, log_iterations=None, samples_dir=None, data_augmentation=False,
-        center_of_mass='fragments', inpainting=False, anchors_context=True, graph_type='FC',
+        center_of_mass='fragments', inpainting=False, anchors_context=True, graph_type=None,
     ):
         super(DDPM, self).__init__()
 
@@ -71,6 +71,9 @@ class DDPM(pl.LightningModule):
         self.anchors_context = anchors_context
 
         self.is_geom = ('geom' in self.train_data_prefix) or ('MOAD' in self.train_data_prefix)
+
+        if graph_type is None:
+            graph_type = '4A' if '.' in train_data_prefix else 'FC'
 
         if type(activation) is str:
             activation = get_activation(activation)
